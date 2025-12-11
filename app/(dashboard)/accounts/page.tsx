@@ -18,6 +18,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import { connectSocialAccount } from "./actions";
 
 const platforms = [
     {
@@ -75,7 +76,12 @@ export default function AccountsPage() {
                         </DialogHeader>
                         <div className="grid grid-cols-2 gap-4 py-4">
                             {platforms.map((platform) => (
-                                <Button key={platform.id} variant="outline" className="h-24 flex flex-col gap-2 hover:bg-muted/50">
+                                <Button
+                                    key={platform.id}
+                                    variant="outline"
+                                    className="h-24 flex flex-col gap-2 hover:bg-muted/50"
+                                    onClick={() => connectSocialAccount(platform.id as any)}
+                                >
                                     <div className={`h-8 w-8 rounded-full ${platform.color}`} />
                                     {platform.name}
                                 </Button>

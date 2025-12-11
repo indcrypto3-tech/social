@@ -13,10 +13,16 @@ import {
     Settings,
     BarChart,
     LogOut,
+    Link as LinkIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const sidebarNavItems = [
+    {
+        title: "Accounts",
+        href: "/accounts",
+        icon: LinkIcon,
+    },
     {
         title: "Dashboard",
         href: "/dashboard",

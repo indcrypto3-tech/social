@@ -1,5 +1,5 @@
 
-import { pgTable, uuid, text, varchar, timestamp, jsonb, pgEnum, integer } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, varchar, timestamp, jsonb, pgEnum, integer, uniqueIndex } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // Enums
@@ -11,11 +11,11 @@ export const roleEnum = pgEnum('role', ['admin', 'editor', 'viewer']);
 
 // Users Table
 export const users = pgTable('users', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').primaryKey(), // Matches Supabase Auth ID
   email: varchar('email', { length: 255 }).notNull().unique(),
   fullName: varchar('full_name', { length: 255 }),
   // If managing password manually (optional if using Supabase Auth only, but good to have)
-  passwordHash: varchar('password_hash'), 
+  passwordHash: varchar('password_hash'),
   subscriptionTier: subscriptionTierEnum('subscription_tier').default('free'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -34,6 +34,10 @@ export const socialAccounts = pgTable('social_accounts', {
   metadata: jsonb('metadata'), // Any extra profile info
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => {
+  return {
+    platformAccountIdIndex: uniqueIndex('platform_account_id_idx').on(table.platform, table.platformAccountId)
+  }
 });
 
 // Scheduled Posts

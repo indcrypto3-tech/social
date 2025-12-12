@@ -1,5 +1,5 @@
 
-import { pgTable, uuid, text, varchar, timestamp, jsonb, pgEnum, integer, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, varchar, timestamp, jsonb, pgEnum, integer, uniqueIndex, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // Enums
@@ -14,6 +14,8 @@ export const users = pgTable('users', {
   id: uuid('id').primaryKey(), // Matches Supabase Auth ID
   email: varchar('email', { length: 255 }).notNull().unique(),
   fullName: varchar('full_name', { length: 255 }),
+  timezone: varchar('timezone', { length: 50 }).default('UTC'),
+  avatarUrl: text('avatar_url'),
   // If managing password manually (optional if using Supabase Auth only, but good to have)
   passwordHash: varchar('password_hash'),
   subscriptionTier: subscriptionTierEnum('subscription_tier').default('free'),
@@ -76,11 +78,23 @@ export const mediaLibrary = pgTable('media_library', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// Notification Preferences
+export const notificationPreferences = pgTable('notification_preferences', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  emailPostFailed: boolean('email_post_failed').default(true).notNull(),
+  emailPostPublished: boolean('email_post_published').default(true).notNull(),
+  weeklyDigest: boolean('weekly_digest').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   socialAccounts: many(socialAccounts),
   scheduledPosts: many(scheduledPosts),
   mediaLibrary: many(mediaLibrary),
+  notificationPreferences: one(notificationPreferences),
 }));
 
 export const socialAccountsRelations = relations(socialAccounts, ({ one, many }) => ({
@@ -107,5 +121,12 @@ export const postDestinationsRelations = relations(postDestinations, ({ one }) =
   socialAccount: one(socialAccounts, {
     fields: [postDestinations.socialAccountId],
     references: [socialAccounts.id],
+  }),
+}));
+
+export const notificationPreferencesRelations = relations(notificationPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [notificationPreferences.userId],
+    references: [users.id],
   }),
 }));

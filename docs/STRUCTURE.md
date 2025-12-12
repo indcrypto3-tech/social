@@ -71,6 +71,11 @@ Route group for the main application dashboard (protected routes).
 *   **`calendar/page.tsx`**: "Calendar" page. Displays scheduled posts in a month-view grid.
 *   **`calendar/calendar-view.tsx`**: Client component for the calendar grid UI interaction.
 *   **`posts/actions.ts`**: CRUD Server Actions for scheduled posts (Read, Update, Delete).
+*   **`settings/page.tsx`**: "Settings" page. User profile, notifications, billing (mock), and team (UI only).
+*   **`settings/settings-client.tsx`**: Client component managing the tabbed settings interface with animations.
+*   **`settings/actions.ts`**: Server Actions for updating profile (`updateProfile`, `deleteAccount`) and notification preferences (`updateNotificationPreferences`).
+*   **`settings/components/`**: Directory containing sub-section components (`profile-settings`, `notification-settings`, `billing-settings`, `team-settings`, `danger-zone`).
+*   **`api/billing/portal/route.ts`**: API Route handler for redirecting to Stripe billing portal (mocked integration).
 
 ---
 

@@ -1,27 +1,20 @@
 
-import * as Sentry from "@sentry/nextjs";
+// Sentry monitoring stub
+// TODO: Install @sentry/nextjs and implement when ready to use Sentry
+// npm install @sentry/nextjs
 
 export function initSentry() {
-    if (process.env.NEXT_RUNTIME === "nodejs") {
-        Sentry.init({
-            dsn: process.env.SENTRY_DSN || "https://examplePublicKey@o0.ingest.sentry.io/0",
-            tracesSampleRate: 1.0,
-            debug: false,
-        });
-    }
-
-    if (process.env.NEXT_RUNTIME === "edge") {
-        Sentry.init({
-            dsn: process.env.SENTRY_DSN || "https://examplePublicKey@o0.ingest.sentry.io/0",
-            tracesSampleRate: 1.0,
-            debug: false,
-        });
+    // Stub implementation - no-op for now
+    if (process.env.SENTRY_DSN) {
+        console.log('Sentry monitoring is not configured. Install @sentry/nextjs to enable.');
     }
 }
 
 export function captureError(error: any, context?: Record<string, any>) {
-    console.error(error);
-    Sentry.captureException(error, {
-        extra: context,
-    });
+    // Log to console for now
+    console.error('Error captured:', error);
+    if (context) {
+        console.error('Context:', context);
+    }
+    // TODO: Implement Sentry.captureException when @sentry/nextjs is installed
 }

@@ -10,21 +10,9 @@ export async function connectSocialAccount(platformId: string, clientOrigin?: st
     const supabase = await createClient()
     const headersList = await headers()
 
-    const headerOrigin = headersList.get('origin')
-    const envUrl = process.env.NEXT_PUBLIC_APP_URL
-    const isDev = process.env.NODE_ENV === 'development'
+    const origin = clientOrigin || headersList.get('origin') || process.env.NEXT_PUBLIC_APP_URL
 
-    console.log(`[Connect Debug] clientOrigin: ${clientOrigin}, headerOrigin: ${headerOrigin}, envUrl: ${envUrl}, isDev: ${isDev}`)
-
-    let origin = clientOrigin || headerOrigin || envUrl || 'http://localhost:3000'
-
-    // Safety override for local development to prevent redirects to production
-    if (isDev && !origin.includes('localhost')) {
-        console.log("[Connect] Forcing localhost origin for development")
-        origin = 'http://localhost:3000'
-    }
-
-    console.log(`[Connect] Final Origin used: ${origin}`)
+    console.log(`[Connect] Requesting connection for platform: ${platformId} (Origin: ${origin})`)
 
     let provider: Provider;
     let scopes: string | undefined;

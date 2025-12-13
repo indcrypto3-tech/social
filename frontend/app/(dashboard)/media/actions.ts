@@ -8,8 +8,16 @@ export async function uploadMedia(formData: FormData) {
     // 1. Authenticate User
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-        throw new Error('Unauthorized')
+        console.error('Upload Failed: No user found in session.');
+        throw new Error('Unauthorized: No user found');
     }
+
+    console.log('Upload User Context:', {
+        id: user.id,
+        role: user.role,
+        aud: user.aud,
+        email: user.email
+    });
 
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
         console.error('Missing Supabase Environment Variables');

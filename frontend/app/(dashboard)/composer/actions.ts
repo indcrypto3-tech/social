@@ -8,8 +8,16 @@ import { apiClient } from "@/lib/api/client";
 // I will define Tone locally or use string for now to avoid errors.
 
 
+import { createClient } from "@/lib/supabase/server";
+
 export async function getAccounts() {
-    return await apiClient<any[]>('/accounts');
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    return await apiClient<any[]>('/accounts', {
+        headers: {
+            Authorization: `Bearer ${session?.access_token}`
+        }
+    });
 }
 
 export async function createPost(formData: FormData) {
@@ -19,8 +27,14 @@ export async function createPost(formData: FormData) {
 
     const scheduledAt = scheduledAtStr ? new Date(scheduledAtStr) : new Date();
 
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+
     return await apiClient('/posts', {
         method: 'POST',
+        headers: {
+            Authorization: `Bearer ${session?.access_token}`
+        },
         body: JSON.stringify({
             content,
             accountIds,

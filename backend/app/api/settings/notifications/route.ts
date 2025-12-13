@@ -2,12 +2,11 @@ import { db } from '../../../../lib/db';
 import { notificationPreferences } from '../../../../lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { withErrorHandler, normalizeResponse } from '../../../../middleware/error';
-import { createClient } from '../../../../lib/supabase/server';
+import { getUser } from '../../../../middleware/auth';
 import { AuthError } from '../../../../lib/errors';
 
 export const GET = withErrorHandler(async (req: Request) => {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getUser(req);
 
     if (!user) {
         throw new AuthError();
@@ -34,8 +33,7 @@ export const GET = withErrorHandler(async (req: Request) => {
 });
 
 export const PATCH = withErrorHandler(async (req: Request) => {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getUser(req);
 
     if (!user) {
         throw new AuthError();

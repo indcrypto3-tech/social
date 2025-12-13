@@ -2,9 +2,15 @@ import { NextRequest } from 'next/server';
 import { db } from '../../../lib/db';
 import { socialAccounts } from '../../../lib/db/schema';
 import { withErrorHandler, normalizeResponse } from '../../../middleware/error';
+import { eq } from 'drizzle-orm';
+import { getUser } from '../../../middleware/auth';
+import { AuthError } from '../../../lib/errors';
 
-export const GET = withErrorHandler(async () => {
-    const accounts = await db.select().from(socialAccounts);
+export const GET = withErrorHandler(async (req: Request) => {
+    const user = await getUser(req);
+    if (!user) throw new AuthError();
+
+    const accounts = await db.select().from(socialAccounts).where(eq(socialAccounts.userId, user.id));
     return normalizeResponse(accounts);
 });
 

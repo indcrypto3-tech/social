@@ -11,7 +11,7 @@ import { apiClient } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getAccounts() {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { session } } = await supabase.auth.getSession();
     return await apiClient<any[]>('/accounts', {
         headers: {
@@ -27,7 +27,7 @@ export async function createPost(formData: FormData) {
 
     const scheduledAt = scheduledAtStr ? new Date(scheduledAtStr) : new Date();
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { session } } = await supabase.auth.getSession();
 
     return await apiClient('/posts', {

@@ -8,7 +8,10 @@ import { Provider } from '@supabase/supabase-js'
 
 export async function connectSocialAccount(provider: Provider) {
     const supabase = await createClient()
-    const origin = (await headers()).get('origin')
+    const headersList = await headers()
+    const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+    console.log("Connect Social Account - Origin:", origin) // Debug log
 
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: provider,
@@ -19,11 +22,12 @@ export async function connectSocialAccount(provider: Provider) {
     })
 
     if (error) {
-        console.error(error)
+        console.error("OAuth Error:", error)
         throw new Error("Failed to initiate OAuth")
     }
 
     if (data.url) {
+        console.log("Redirecting to:", data.url)
         redirect(data.url)
     }
 }

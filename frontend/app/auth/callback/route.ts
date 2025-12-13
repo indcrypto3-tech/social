@@ -4,6 +4,11 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
     const { searchParams, origin } = new URL(request.url)
+
+    // Debug logging
+    console.log("Auth Callback - Request URL:", request.url)
+    console.log("Auth Callback - Origin:", origin)
+
     const code = searchParams.get('code')
     // if "next" is in param, use it as the redirect URL
     const next = searchParams.get('next') ?? '/dashboard'

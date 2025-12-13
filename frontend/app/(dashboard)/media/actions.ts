@@ -11,6 +11,11 @@ export async function uploadMedia(formData: FormData) {
         throw new Error('Unauthorized')
     }
 
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        console.error('Missing Supabase Environment Variables');
+        throw new Error('Server Configuration Error: Missing Supabase Env Vars');
+    }
+
     // 2. Get File
     const file = formData.get('file') as File
     if (!file) {
@@ -27,8 +32,10 @@ export async function uploadMedia(formData: FormData) {
         .upload(fileName, file)
 
     if (uploadError) {
-        console.error('Upload error:', uploadError)
-        throw new Error('Failed to upload file')
+        console.error('Supabase Storage Upload Error:', JSON.stringify(uploadError, null, 2));
+        console.error('Attempted to upload to:', fileName);
+        console.error('User ID:', user.id);
+        throw new Error(`Failed to upload file: ${uploadError.message}`)
     }
 
     console.log("TODO: Call Backend API to sync media library DB");

@@ -188,3 +188,43 @@ CREATE UNIQUE INDEX "unique_team_member" ON "team_members" USING btree ("team_id
 -- ============================================
 -- Migration Complete!
 -- ============================================
+
+-- Migration 0003: Storage Policies
+-- ============================================
+
+-- Ensure 'media' bucket exists
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('media', 'media', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage Policies
+-- Note: You might need to drop existing policies if they conflict, 
+-- but these are standard ensuring authenticated access.
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND policyname = 'Public Access'
+    ) THEN
+        CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING ( bucket_id = 'media' );
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND policyname = 'Authenticated Upload'
+    ) THEN
+        CREATE POLICY "Authenticated Upload" ON storage.objects FOR INSERT TO authenticated WITH CHECK ( bucket_id = 'media' AND auth.uid() = owner );
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND policyname = 'User Update'
+    ) THEN
+        CREATE POLICY "User Update" ON storage.objects FOR UPDATE TO authenticated USING ( bucket_id = 'media' AND auth.uid() = owner );
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND policyname = 'User Delete'
+    ) THEN
+        CREATE POLICY "User Delete" ON storage.objects FOR DELETE TO authenticated USING ( bucket_id = 'media' AND auth.uid() = owner );
+    END IF;
+END
+$$;

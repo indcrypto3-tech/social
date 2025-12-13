@@ -43,7 +43,7 @@ export default async function TeamPage() {
                         </CardHeader>
                         <CardContent>
                             <MembersList
-                                members={members.map(m => ({
+                                members={members.map((m: any) => ({
                                     ...m,
                                     // Ensure joinedAt is string or Date as expected. Drizzle returns Date.
                                     joinedAt: m.joinedAt,

@@ -107,7 +107,7 @@ export default function MediaList({ initialData }: { initialData: MediaItem[] })
                         ref={fileInputRef}
                         onChange={handleFileChange}
                         className="hidden"
-                        accept="image/*"
+                        accept="image/*,video/*"
                     />
                     <Button onClick={handleUploadClick} disabled={isUploading}>
                         {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
@@ -184,12 +184,24 @@ export default function MediaList({ initialData }: { initialData: MediaItem[] })
                         <Card key={item.id} className="group relative overflow-hidden aspect-square border-0 ring-1 ring-border bg-muted/10 hover:shadow-xl transition-all duration-300">
                             <div className="absolute inset-0 bg-muted/20 animate-pulse" /> {/* Placeholder loading skeleton effect if needed, but Image handles loading */}
                             <div className="relative w-full h-full">
-                                <Image
-                                    src={item.url}
-                                    alt={item.fileName || 'Media'}
-                                    fill
-                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                                />
+                                {item.fileType.startsWith('video') ? (
+                                    <video
+                                        src={item.url}
+                                        className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+                                        controls={false}
+                                        muted
+                                        loop
+                                        onMouseOver={event => event.currentTarget.play()}
+                                        onMouseOut={event => event.currentTarget.pause()}
+                                    />
+                                ) : (
+                                    <Image
+                                        src={item.url}
+                                        alt={item.fileName || 'Media'}
+                                        fill
+                                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                    />
+                                )}
                             </div>
 
                             {/* Overlay */}

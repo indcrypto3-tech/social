@@ -96,8 +96,21 @@ export default function AccountsPage() {
                                     variant="outline"
                                     className="h-24 flex flex-col gap-3 hover:bg-muted/50 border-muted-foreground/20 hover:border-primary/50 transition-all"
                                     onClick={async () => {
-                                        const res = await connectSocialAccount(platform.id as any)
-                                        if (res?.url) window.location.href = res.url
+                                        try {
+                                            const res = await connectSocialAccount(platform.id)
+                                            if (res?.error) {
+                                                console.error("Connection failed:", res.error)
+                                                alert(`Connection failed: ${res.error}`)
+                                                return
+                                            }
+                                            if (res?.url) {
+                                                console.log("Navigating to:", res.url)
+                                                window.location.href = res.url
+                                            }
+                                        } catch (err) {
+                                            console.error("Unexpected error connecting account:", err)
+                                            alert("An unexpected error occurred. Please try again.")
+                                        }
                                     }}
                                 >
                                     <div className={cn("h-10 w-10 flex items-center justify-center rounded-full", platform.bg)}>
@@ -140,8 +153,21 @@ export default function AccountsPage() {
                                         variant="outline"
                                         className="h-24 flex flex-col gap-3 hover:bg-muted/50 border-muted-foreground/20 hover:border-primary/50 transition-all"
                                         onClick={async () => {
-                                            const res = await connectSocialAccount(platform.id as any)
-                                            if (res?.url) window.location.href = res.url
+                                            try {
+                                                const res = await connectSocialAccount(platform.id)
+                                                if (res?.error) {
+                                                    console.error("Connection failed:", res.error)
+                                                    alert(`Connection failed: ${res.error}`)
+                                                    return
+                                                }
+                                                if (res?.url) {
+                                                    console.log("Navigating to:", res.url)
+                                                    window.location.href = res.url
+                                                }
+                                            } catch (err) {
+                                                console.error("Unexpected error connecting account:", err)
+                                                alert("An unexpected error occurred. Please try again.")
+                                            }
                                         }}
                                     >
                                         <div className={cn("h-10 w-10 flex items-center justify-center rounded-full", platform.bg)}>

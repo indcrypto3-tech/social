@@ -1,11 +1,10 @@
-import { NextRequest } from 'next/server';
 import { db } from '../../../../lib/db';
 import { teamInvites } from '../../../../lib/db/schema';
 import { eq, and, gt } from 'drizzle-orm';
 import { withErrorHandler, normalizeResponse } from '../../../../middleware/error';
 import { NotFoundError } from '../../../../lib/errors';
 
-export const GET = withErrorHandler(async (req: NextRequest, { params }: { params: { token: string } }) => {
+export const GET = withErrorHandler(async (req: Request, { params }: { params: { token: string } }) => {
     const token = params.token;
 
     const invite = await db.query.teamInvites.findFirst({

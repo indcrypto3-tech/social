@@ -1,4 +1,3 @@
-import { NextRequest } from 'next/server';
 import { db } from '../../../lib/db';
 import { users } from '../../../lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -6,7 +5,7 @@ import { withErrorHandler, normalizeResponse } from '../../../middleware/error';
 import { createClient } from '../../../lib/supabase/server';
 import { AuthError, NotFoundError } from '../../../lib/errors';
 
-export const GET = withErrorHandler(async (req: NextRequest) => {
+export const GET = withErrorHandler(async (req: Request) => {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -37,7 +36,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     return normalizeResponse(profile);
 });
 
-export const PATCH = withErrorHandler(async (req: NextRequest) => {
+export const PATCH = withErrorHandler(async (req: Request) => {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 

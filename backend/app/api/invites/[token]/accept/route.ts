@@ -1,4 +1,3 @@
-import { NextRequest } from 'next/server';
 import { db } from '../../../../../lib/db';
 import { teamInvites, teamMembers } from '../../../../../lib/db/schema';
 import { eq, and, gt } from 'drizzle-orm';
@@ -6,7 +5,7 @@ import { withErrorHandler, normalizeResponse } from '../../../../../middleware/e
 import { createClient } from '../../../../../lib/supabase/server';
 import { AuthError, NotFoundError, ValidationError } from '../../../../../lib/errors';
 
-export const POST = withErrorHandler(async (req: NextRequest, { params }: { params: { token: string } }) => {
+export const POST = withErrorHandler(async (req: Request, { params }: { params: { token: string } }) => {
     const token = params.token;
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

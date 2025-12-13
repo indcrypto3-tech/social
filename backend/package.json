@@ -1,0 +1,41 @@
+{
+    "name": "social-scheduler-backend",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev -p 4000",
+        "build": "next build",
+        "start": "next start -p 4000",
+        "lint": "next lint",
+        "db:generate": "drizzle-kit generate",
+        "db:migrate": "drizzle-kit migrate",
+        "db:push": "drizzle-kit push",
+        "db:studio": "drizzle-kit studio",
+        "worker": "npx tsx worker/index.ts"
+    },
+    "dependencies": {
+        "@react-email/components": "^1.0.1",
+        "@supabase/ssr": "^0.8.0",
+        "@supabase/supabase-js": "^2.87.1",
+        "bullmq": "^5.65.1",
+        "date-fns": "^4.1.0",
+        "dotenv": "^17.2.3",
+        "drizzle-orm": "^0.45.0",
+        "ioredis": "^5.8.2",
+        "next": "^14.2.15",
+        "openai": "^6.10.0",
+        "postgres": "^3.4.7",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "resend": "^6.6.0",
+        "stripe": "^20.0.0",
+        "zod": "^4.1.13"
+    },
+    "devDependencies": {
+        "@types/node": "^20",
+        "@types/react": "^18.3.11",
+        "drizzle-kit": "^0.31.8",
+        "tsx": "^4.21.0",
+        "typescript": "^5"
+    }
+}

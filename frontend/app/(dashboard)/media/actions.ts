@@ -1,6 +1,7 @@
 'use server'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { apiClient } from '@/lib/api/client'
 
 export async function uploadMedia(formData: FormData) {
     const supabase = await createClient()
@@ -70,8 +71,34 @@ export async function uploadMedia(formData: FormData) {
         throw new Error(`Failed to upload file: ${uploadError.message}`)
     }
 
-    console.log("TODO: Call Backend API to sync media library DB");
-    // await db.insert...
+    // 4. Get Public URL (or signed URL depending on bucket privacy)
+    const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(fileName);
+
+    // 5. Sync with Backend Database
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+
+    if (token) {
+        try {
+            await apiClient('/media', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    url: publicUrl,
+                    fileName: file.name,
+                    fileType: file.type,
+                    fileSize: file.size
+                })
+            });
+        } catch (apiError) {
+            console.error("Failed to sync media with backend DB:", apiError);
+            // Optional: consistency rollback (delete file from storage)
+        }
+    } else {
+        console.error("No access token available to sync with backend DB");
+    }
 
     revalidatePath('/media')
 }
@@ -86,8 +113,24 @@ export async function deleteMedia(mediaId: string, fileUrl: string) {
         await supabase.storage.from('media').remove([storagePath])
     }
 
-    console.log("TODO: Call Backend API to delete media from DB");
-    // await db.delete...
+    // 5. Sync with Backend Database
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+
+    if (token) {
+        try {
+            await apiClient(`/media?id=${mediaId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+        } catch (apiError) {
+            console.error("Failed to sync media deletion with backend DB:", apiError);
+        }
+    } else {
+        console.error("No access token available to sync deletion with backend DB");
+    }
 
     revalidatePath('/media')
 }

@@ -10,12 +10,15 @@ export default async function MediaPage() {
     if (!session) redirect('/login');
 
     const mediaItems = await apiClient<any[]>('/media', {
-        headers: { Authorization: `Bearer ${session.access_token}` }
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        cache: 'no-store'
     });
+
+    console.log('Media Page Fetched Items:', mediaItems?.length);
 
     return (
         <div className="flex flex-col gap-6">
-            <MediaList initialData={mediaItems} />
+            <MediaList initialData={mediaItems || []} />
         </div>
     );
 }

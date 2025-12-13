@@ -78,9 +78,12 @@ export async function uploadMedia(formData: FormData) {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
 
+    console.log('[MediaUpload] Syncing with DB. Token available:', !!token);
+
     if (token) {
         try {
-            await apiClient('/media', {
+            console.log('[MediaUpload] Sending POST to /api/media...');
+            const result = await apiClient('/media', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -92,12 +95,13 @@ export async function uploadMedia(formData: FormData) {
                     fileSize: file.size
                 })
             });
+            console.log('[MediaUpload] DB Sync Success:', result);
         } catch (apiError) {
-            console.error("Failed to sync media with backend DB:", apiError);
+            console.error("[MediaUpload] Failed to sync media with backend DB:", apiError);
             // Optional: consistency rollback (delete file from storage)
         }
     } else {
-        console.error("No access token available to sync with backend DB");
+        console.error("[MediaUpload] No access token available to sync with backend DB");
     }
 
     revalidatePath('/media')

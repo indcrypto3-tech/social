@@ -38,7 +38,7 @@ export async function POST(req: Request) {
                 stripeCustomerId: customerId,
                 subscriptionPlan: 'pro', // This should be mapped from price ID in real app
                 subscriptionStatus: subscription.status,
-                refreshAt: new Date(subscription.current_period_end * 1000)
+                refreshAt: (subscription as any).current_period_end ? new Date((subscription as any).current_period_end * 1000) : null
             }).where(eq(users.id, userId))
         }
     }
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
         if (dbUser) {
             await db.update(users).set({
                 subscriptionStatus: subscription.status,
-                refreshAt: new Date(subscription.current_period_end * 1000),
+                refreshAt: (subscription as any).current_period_end ? new Date((subscription as any).current_period_end * 1000) : null,
                 stripeSubscriptionId: subscription.id
             }).where(eq(users.id, dbUser.id))
         }

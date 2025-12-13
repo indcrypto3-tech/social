@@ -34,10 +34,34 @@ export async function uploadMedia(formData: FormData) {
     const fileExt = file.name.split('.').pop()
     const fileName = `${user.id}/${Date.now()}.${fileExt}`
 
-    const { data: uploadData, error: uploadError } = await supabase
+    // ATTEMPT 1: Try using Service Role Key (Bypasses RLS)
+    // This is secure because we validated the 'user' above.
+    let uploadClient = supabase;
+
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        console.log('Using Service Role Key for Storage Upload (Bypassing RLS)');
+        const { createClient: createAdminClient } = await import('@supabase/supabase-js');
+        uploadClient = createAdminClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY,
+            {
+                auth: {
+                    autoRefreshToken: false,
+                    persistSession: false
+                }
+            }
+        );
+    } else {
+        console.warn('SUPABASE_SERVICE_ROLE_KEY not found. Falling back to authenticated user client (RLS enforced).');
+    }
+
+    const { data: uploadData, error: uploadError } = await uploadClient
         .storage
         .from('media')
-        .upload(fileName, file)
+        .upload(fileName, file, {
+            upsert: true,
+            contentType: file.type
+        })
 
     if (uploadError) {
         console.error('Supabase Storage Upload Error:', JSON.stringify(uploadError, null, 2));

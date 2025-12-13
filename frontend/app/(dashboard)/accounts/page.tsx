@@ -97,7 +97,7 @@ export default function AccountsPage() {
                                     className="h-24 flex flex-col gap-3 hover:bg-muted/50 border-muted-foreground/20 hover:border-primary/50 transition-all"
                                     onClick={async () => {
                                         try {
-                                            const res = await connectSocialAccount(platform.id)
+                                            const res = await connectSocialAccount(platform.id, window.location.origin)
                                             if (res?.error) {
                                                 console.error("Connection failed:", res.error)
                                                 alert(`Connection failed: ${res.error}`)
@@ -154,7 +154,7 @@ export default function AccountsPage() {
                                         className="h-24 flex flex-col gap-3 hover:bg-muted/50 border-muted-foreground/20 hover:border-primary/50 transition-all"
                                         onClick={async () => {
                                             try {
-                                                const res = await connectSocialAccount(platform.id)
+                                                const res = await connectSocialAccount(platform.id, window.location.origin)
                                                 if (res?.error) {
                                                     console.error("Connection failed:", res.error)
                                                     alert(`Connection failed: ${res.error}`)

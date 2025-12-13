@@ -6,12 +6,12 @@ import { headers } from 'next/headers'
 
 import { Provider } from '@supabase/supabase-js'
 
-export async function connectSocialAccount(platformId: string) {
+export async function connectSocialAccount(platformId: string, clientOrigin?: string) {
     const supabase = await createClient()
     const headersList = await headers()
-    const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const origin = clientOrigin || headersList.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-    console.log(`[Connect] Requesting connection for platform: ${platformId}`)
+    console.log(`[Connect] Requesting connection for platform: ${platformId} (Origin: ${origin})`)
 
     let provider: Provider;
     let scopes: string | undefined;

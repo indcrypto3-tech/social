@@ -3,12 +3,12 @@ import { db } from '@/lib/db';
 import { scheduledPosts, postDestinations } from '@/lib/db/schema';
 import { withErrorHandler, normalizeResponse } from '@/middleware/error';
 import { getUser } from '@/middleware/auth';
-import { AppError, ValidationError } from '@/lib/errors';
+import { AuthError, ValidationError } from '@/lib/errors';
 import { eq, desc } from 'drizzle-orm';
 
 export const GET = withErrorHandler(async (req: Request) => {
     const user = await getUser(req);
-    if (!user) throw new AppError('Unauthorized', 401);
+    if (!user) throw new AuthError('Unauthorized');
 
     const posts = await db.query.scheduledPosts.findMany({
         where: eq(scheduledPosts.userId, user.id),
@@ -26,7 +26,7 @@ export const GET = withErrorHandler(async (req: Request) => {
 
 export const POST = withErrorHandler(async (req: Request) => {
     const user = await getUser(req);
-    if (!user) throw new AppError('Unauthorized', 401);
+    if (!user) throw new AuthError('Unauthorized');
 
     const body = await req.json();
 

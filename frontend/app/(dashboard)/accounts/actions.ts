@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+
 import { headers } from 'next/headers'
 
 import { Provider } from '@supabase/supabase-js'
@@ -28,8 +28,10 @@ export async function connectSocialAccount(provider: Provider) {
 
     if (data.url) {
         console.log("Redirecting to:", data.url)
-        redirect(data.url)
+        return { url: data.url }
     }
+
+    return { error: 'Failed to initiate OAuth' }
 }
 
 function getScopesForProvider(provider: string) {

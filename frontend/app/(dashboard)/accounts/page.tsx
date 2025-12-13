@@ -95,7 +95,10 @@ export default function AccountsPage() {
                                     key={platform.id}
                                     variant="outline"
                                     className="h-24 flex flex-col gap-3 hover:bg-muted/50 border-muted-foreground/20 hover:border-primary/50 transition-all"
-                                    onClick={() => connectSocialAccount(platform.id as any)}
+                                    onClick={async () => {
+                                        const res = await connectSocialAccount(platform.id as any)
+                                        if (res?.url) window.location.href = res.url
+                                    }}
                                 >
                                     <div className={cn("h-10 w-10 flex items-center justify-center rounded-full", platform.bg)}>
                                         <platform.icon className={cn("h-5 w-5", platform.color)} />
@@ -136,7 +139,10 @@ export default function AccountsPage() {
                                         key={platform.id}
                                         variant="outline"
                                         className="h-24 flex flex-col gap-3 hover:bg-muted/50 border-muted-foreground/20 hover:border-primary/50 transition-all"
-                                        onClick={() => connectSocialAccount(platform.id as any)}
+                                        onClick={async () => {
+                                            const res = await connectSocialAccount(platform.id as any)
+                                            if (res?.url) window.location.href = res.url
+                                        }}
                                     >
                                         <div className={cn("h-10 w-10 flex items-center justify-center rounded-full", platform.bg)}>
                                             <platform.icon className={cn("h-5 w-5", platform.color)} />

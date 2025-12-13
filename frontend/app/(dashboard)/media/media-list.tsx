@@ -1,9 +1,10 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState, useRef, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, Image as ImageIcon, Trash2, Loader2, Search, Filter, SortAsc, SortDesc } from "lucide-react";
+import { Upload, Image as ImageIcon, Trash2, Loader2, Search, Filter, SortAsc, SortDesc, RefreshCw } from "lucide-react";
 import { uploadMedia, deleteMedia } from './actions';
 import Image from 'next/image';
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +37,7 @@ export default function MediaList({ initialData }: { initialData: MediaItem[] })
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast()
+    const router = useRouter();
 
     const handleUploadClick = () => {
         fileInputRef.current?.click();
@@ -126,6 +128,15 @@ export default function MediaList({ initialData }: { initialData: MediaItem[] })
                     />
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 gap-1"
+                        onClick={() => router.refresh()}
+                    >
+                        <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                        <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Refresh</span>
+                    </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="sm" className="h-9 gap-1">

@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { FadeIn, SlideUp, BlurFade } from "@/components/animations";
 import Link from "next/link";
+import { HeroVideo } from "@/components/landing/HeroVideo";
 
 interface HeroProps {
     inWaitlistMode?: boolean;
@@ -46,7 +47,7 @@ export function Hero({ inWaitlistMode }: HeroProps) {
                                     Start Free Trial
                                 </Button>
                             </Link>
-                            <Link href="#features" className="w-full sm:w-auto">
+                            <Link href="#demo" className="w-full sm:w-auto">
                                 <Button variant="outline" size="lg" className="rounded-full px-8 h-12 text-base w-full">
                                     View Demo
                                 </Button>
@@ -55,23 +56,9 @@ export function Hero({ inWaitlistMode }: HeroProps) {
                     )}
                 </SlideUp>
 
-                <div className="mt-20 relative">
+                <div className="mt-20 relative" id="demo">
                     <BlurFade delay={0.5}>
-                        <div className="rounded-xl border bg-background/50 backdrop-blur-sm shadow-2xl p-2 md:p-4 max-w-5xl mx-auto">
-                            <div className="aspect-video rounded-lg bg-muted/50 overflow-hidden relative group">
-                                {/* Placeholder for Product Screenshot */}
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground bg-gradient-to-br from-muted/50 to-muted/80">
-                                    <span className="text-2xl font-medium mb-2">SocialScheduler Dashboard</span>
-                                    <span className="text-sm opacity-70">Interactive Preview coming soon</span>
-                                </div>
-                                {/* Simulated UI Elements */}
-                                <div className="absolute top-4 left-4 right-4 h-8 bg-background/40 rounded flex items-center px-2 gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                                    <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                                </div>
-                            </div>
-                        </div>
+                        <HeroVideo />
                     </BlurFade>
                     {/* Decorative gradients */}
                     <div className="absolute -top-10 -left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl -z-10 opacity-50"></div>

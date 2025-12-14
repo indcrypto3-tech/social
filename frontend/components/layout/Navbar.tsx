@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-export function Navbar() {
+interface NavbarProps {
+    inWaitlistMode?: boolean;
+}
+
+export function Navbar({ inWaitlistMode }: NavbarProps) {
     const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
@@ -31,17 +35,29 @@ export function Navbar() {
                 <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
                     <Link href="/#features" className="hover:text-primary transition-colors">Features</Link>
                     <Link href="/#how-it-works" className="hover:text-primary transition-colors">How it Works</Link>
-                    <Link href="/pricing" className="hover:text-primary transition-colors">Pricing</Link>
+                    {!inWaitlistMode && <Link href="/pricing" className="hover:text-primary transition-colors">Pricing</Link>}
                     <Link href="/about" className="hover:text-primary transition-colors">About</Link>
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <Link href="/login" className="hidden md:block text-sm font-medium hover:text-primary transition-colors">
-                        Log in
-                    </Link>
-                    <Button size="sm" className="rounded-full px-6 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow">
-                        Get Started
-                    </Button>
+                    {inWaitlistMode ? (
+                        <Link href="/waitlist">
+                            <Button size="sm" className="rounded-full px-6 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow">
+                                Join Waitlist
+                            </Button>
+                        </Link>
+                    ) : (
+                        <>
+                            <Link href="/login" className="hidden md:block text-sm font-medium hover:text-primary transition-colors">
+                                Log in
+                            </Link>
+                            <Link href="/register">
+                                <Button size="sm" className="rounded-full px-6 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow">
+                                    Get Started
+                                </Button>
+                            </Link>
+                        </>
+                    )}
                 </div>
             </div>
         </nav>

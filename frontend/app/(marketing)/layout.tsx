@@ -6,9 +6,11 @@ export default function MarketingLayout({
 }: {
     children: React.ReactNode;
 }) {
+    const isWaitlistMode = process.env.LAUNCH === 'OFF';
+
     return (
         <>
-            <Navbar />
+            <Navbar inWaitlistMode={isWaitlistMode} />
             <main className="min-h-screen">
                 {children}
             </main>

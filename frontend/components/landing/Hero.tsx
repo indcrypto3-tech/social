@@ -3,7 +3,11 @@ import { Button } from "@/components/ui/button";
 import { FadeIn, SlideUp, BlurFade } from "@/components/animations";
 import Link from "next/link";
 
-export function Hero() {
+interface HeroProps {
+    inWaitlistMode?: boolean;
+}
+
+export function Hero({ inWaitlistMode }: HeroProps) {
     return (
         <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
             <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
@@ -29,16 +33,26 @@ export function Hero() {
                 </SlideUp>
 
                 <SlideUp delay={0.3} className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <Link href="/register" className="w-full sm:w-auto">
-                        <Button size="lg" className="rounded-full px-8 h-12 text-base shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow w-full">
-                            Start Free Trial
-                        </Button>
-                    </Link>
-                    <Link href="#features" className="w-full sm:w-auto">
-                        <Button variant="outline" size="lg" className="rounded-full px-8 h-12 text-base w-full">
-                            View Demo
-                        </Button>
-                    </Link>
+                    {inWaitlistMode ? (
+                        <Link href="/waitlist" className="w-full sm:w-auto">
+                            <Button size="lg" className="rounded-full px-8 h-12 text-base shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow w-full">
+                                Join Waitlist
+                            </Button>
+                        </Link>
+                    ) : (
+                        <>
+                            <Link href="/register" className="w-full sm:w-auto">
+                                <Button size="lg" className="rounded-full px-8 h-12 text-base shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow w-full">
+                                    Start Free Trial
+                                </Button>
+                            </Link>
+                            <Link href="#features" className="w-full sm:w-auto">
+                                <Button variant="outline" size="lg" className="rounded-full px-8 h-12 text-base w-full">
+                                    View Demo
+                                </Button>
+                            </Link>
+                        </>
+                    )}
                 </SlideUp>
 
                 <div className="mt-20 relative">

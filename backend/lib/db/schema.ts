@@ -141,6 +141,13 @@ export const notificationEvents = pgTable('notification_events', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// Waitlist Table
+export const waitlist = pgTable('waitlist', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 
 // Relations
 export const usersRelations = relations(users, ({ many, one }) => ({

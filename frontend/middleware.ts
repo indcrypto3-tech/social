@@ -1,7 +1,15 @@
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from './lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
+    if (process.env.LAUNCH === 'OFF') {
+        const path = request.nextUrl.pathname;
+        const allowedPaths = ['/', '/waitlist', '/privacy', '/terms'];
+
+        if (!allowedPaths.includes(path)) {
+            return NextResponse.redirect(new URL('/waitlist', request.url));
+        }
+    }
     return await updateSession(request)
 }
 

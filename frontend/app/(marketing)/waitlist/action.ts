@@ -4,7 +4,7 @@ import { apiClient } from "@/lib/api/client";
 
 export async function joinWaitlist(email: string) {
     try {
-        await apiClient("/api/waitlist", {
+        await apiClient("/waitlist", {
             method: "POST",
             body: JSON.stringify({ email }),
         });

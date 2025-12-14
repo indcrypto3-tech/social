@@ -245,9 +245,14 @@ export default function ComposerPage() {
                                     </Select>
                                 </div>
                             </div>
-                            <Button onClick={handleSubmit} disabled={isSubmitting} size="lg" className="px-8 shadow-md">
+                            <Button
+                                onClick={() => accounts.length === 0 ? (window.location.href = '/accounts') : handleSubmit()}
+                                disabled={isSubmitting}
+                                size="lg"
+                                className="px-8 shadow-md"
+                            >
                                 <Send className="mr-2 h-4 w-4" />
-                                {isSubmitting ? 'Scheduling...' : 'Schedule Post'}
+                                {accounts.length === 0 ? 'Connect Accounts' : (isSubmitting ? 'Scheduling...' : 'Schedule Post')}
                             </Button>
                         </div>
                     </Card>

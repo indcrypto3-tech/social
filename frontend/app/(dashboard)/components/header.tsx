@@ -153,7 +153,7 @@ export function Header() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                                className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+                                className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-medium p-3"
                                 onClick={async () => await logout()}
                             >
                                 <LogOut className="mr-2 h-4 w-4" /> Logout

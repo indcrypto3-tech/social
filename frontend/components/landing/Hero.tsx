@@ -29,12 +29,16 @@ export function Hero() {
                 </SlideUp>
 
                 <SlideUp delay={0.3} className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <Button size="lg" className="rounded-full px-8 h-12 text-base shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow w-full sm:w-auto">
-                        Start Free Trial
-                    </Button>
-                    <Button variant="outline" size="lg" className="rounded-full px-8 h-12 text-base w-full sm:w-auto">
-                        View Demo
-                    </Button>
+                    <Link href="/register" className="w-full sm:w-auto">
+                        <Button size="lg" className="rounded-full px-8 h-12 text-base shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow w-full">
+                            Start Free Trial
+                        </Button>
+                    </Link>
+                    <Link href="#features" className="w-full sm:w-auto">
+                        <Button variant="outline" size="lg" className="rounded-full px-8 h-12 text-base w-full">
+                            View Demo
+                        </Button>
+                    </Link>
                 </SlideUp>
 
                 <div className="mt-20 relative">

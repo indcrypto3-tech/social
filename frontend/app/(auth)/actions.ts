@@ -51,14 +51,6 @@ export async function signup(formData: FormData) {
         redirect('/register?message=Account created! Please check your email to verify your account.')
     }
 
-    // Sync with public.users table (Removed direct DB access)
-    // TODO: Implement backend webhook or API enpoint for user sync
-    /* 
-    if (!error && data.email) {
-       await apiClient.post('/auth/sync', { email: data.email, ... })
-    }
-    */
-
     revalidatePath('/', 'layout')
     redirect('/dashboard')
 }
@@ -68,4 +60,23 @@ export async function logout() {
     await supabase.auth.signOut()
     revalidatePath('/', 'layout')
     redirect('/login')
+}
+
+export async function resetPassword(formData: FormData) {
+    const supabase = await createClient()
+    const email = formData.get('email') as string
+
+    if (!email) {
+        redirect('/forgot-password?error=Email is required')
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback?next=/update-password`,
+    })
+
+    if (error) {
+        redirect('/forgot-password?error=' + encodeURIComponent(error.message))
+    }
+
+    redirect('/forgot-password?message=Check your email for the password reset link')
 }

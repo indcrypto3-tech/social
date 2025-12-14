@@ -20,7 +20,7 @@ export function HeroVideo() {
                     <iframe
                         width="100%"
                         height="100%"
-                        src="https://www.youtube.com/embed/LXb3EKWsInQ?autoplay=1&mute=1&rel=0&modestbranding=1"
+                        src="https://www.youtube.com/embed/2Ea-Qfq2oHk?autoplay=1&mute=1&rel=0&modestbranding=1"
                         title="Product Demo"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen

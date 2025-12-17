@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 interface User {
     id: string
     fullName: string | null
-    email: string
+    email?: string | null
     timezone: string | null
     avatarUrl: string | null
 }
@@ -86,7 +86,7 @@ export function ProfileSettings({ user }: { user: User }) {
                     <div className="flex items-center gap-4">
                         <Avatar className="h-20 w-20">
                             <AvatarImage src={avatarUrl || ''} />
-                            <AvatarFallback>{user.fullName?.[0] || user.email[0]}</AvatarFallback>
+                            <AvatarFallback>{user.fullName?.[0] || user.email?.[0] || '?'}</AvatarFallback>
                         </Avatar>
                         <div className="grid w-full max-w-sm items-center gap-1.5">
                             <Label htmlFor="avatar">Avatar</Label>
@@ -101,7 +101,7 @@ export function ProfileSettings({ user }: { user: User }) {
 
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" value={user.email} disabled />
+                        <Input id="email" value={user.email || ''} disabled />
                     </div>
 
                     <div className="grid gap-2">

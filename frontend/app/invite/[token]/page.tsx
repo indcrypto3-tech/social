@@ -73,7 +73,7 @@ export default async function InvitePage({ params }: { params: { token: string }
     }
 
     // Check if email matches (optional safety)
-    if (user.email !== invite.email) {
+    if (user.email && invite.email && user.email !== invite.email) {
         // You might want to allow this or warn. 
     }
 
@@ -94,7 +94,7 @@ export default async function InvitePage({ params }: { params: { token: string }
                         </Button>
                     </form>
                     <div className="mt-4 text-center text-sm text-gray-500">
-                        Logged in as {user.email}
+                        Logged in as {user.email || 'User'}
                     </div>
                 </CardContent>
             </Card>

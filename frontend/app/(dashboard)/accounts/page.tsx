@@ -19,10 +19,11 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { connectSocialAccount } from "./actions";
 import { PageHeader } from "../components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase"; // Import client-side supabase
+import { Provider } from "@supabase/supabase-js";
 
 const platforms = [
     {
@@ -72,6 +73,67 @@ const platforms = [
 export default function AccountsPage() {
     const connectedAccounts: any[] = []; // Fetch from API later
 
+    const handleConnect = async (platformId: string) => {
+        let provider: Provider;
+        let scopes: string | undefined;
+
+        switch (platformId) {
+            case 'facebook':
+                provider = 'facebook'
+                scopes = 'pages_show_list,pages_read_engagement,pages_manage_posts'
+                break
+            case 'instagram':
+                provider = 'instagram' as Provider
+                scopes = 'instagram_basic,instagram_content_publish'
+                break
+            case 'twitter':
+                provider = 'twitter'
+                scopes = 'tweet.read,tweet.write,users.read,offline.access'
+                break
+            case 'linkedin':
+                provider = 'linkedin'
+                scopes = 'w_member_social,r_liteprofile'
+                break
+            case 'youtube':
+                provider = 'google'
+                scopes = 'https://www.googleapis.com/auth/youtube.readonly,https://www.googleapis.com/auth/youtube.upload'
+                break
+            case 'tiktok':
+                console.warn("TikTok connection requested but not natively supported via Supabase yet.")
+                alert("TikTok integration coming soon")
+                return
+            default:
+                console.error(`Unknown platform: ${platformId}`)
+                alert(`Platform ${platformId} not supported`)
+                return
+        }
+
+        console.log(`[Connect] Initiating client-side OAuth for ${platformId}`)
+
+        try {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: provider,
+                options: {
+                    redirectTo: `${window.location.origin}/auth/callback?next=/dashboard/accounts`,
+                    scopes: scopes,
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'consent',
+                    }
+                },
+            })
+
+            if (error) {
+                console.error("OAuth Error:", error)
+                alert(`Failed to initiate connection: ${error.message}`)
+            }
+            // Supabase client handles the redirect automatically
+        } catch (err) {
+            console.error("Unexpected error:", err)
+            alert("An unexpected error occurred.")
+        }
+    }
+
     return (
         <div className="flex flex-col gap-6">
             <PageHeader heading="Connected Accounts" text="Manage your social media connections and permissions.">
@@ -95,23 +157,7 @@ export default function AccountsPage() {
                                     key={platform.id}
                                     variant="outline"
                                     className="h-24 flex flex-col gap-3 hover:bg-muted/50 border-muted-foreground/20 hover:border-primary/50 transition-all"
-                                    onClick={async () => {
-                                        try {
-                                            const res = await connectSocialAccount(platform.id, window.location.origin)
-                                            if (res?.error) {
-                                                console.error("Connection failed:", res.error)
-                                                alert(`Connection failed: ${res.error}`)
-                                                return
-                                            }
-                                            if (res?.url) {
-                                                console.log("Navigating to:", res.url)
-                                                window.location.href = res.url
-                                            }
-                                        } catch (err) {
-                                            console.error("Unexpected error connecting account:", err)
-                                            alert("An unexpected error occurred. Please try again.")
-                                        }
-                                    }}
+                                    onClick={() => handleConnect(platform.id)}
                                 >
                                     <div className={cn("h-10 w-10 flex items-center justify-center rounded-full", platform.bg)}>
                                         <platform.icon className={cn("h-5 w-5", platform.color)} />
@@ -152,23 +198,7 @@ export default function AccountsPage() {
                                         key={platform.id}
                                         variant="outline"
                                         className="h-24 flex flex-col gap-3 hover:bg-muted/50 border-muted-foreground/20 hover:border-primary/50 transition-all"
-                                        onClick={async () => {
-                                            try {
-                                                const res = await connectSocialAccount(platform.id, window.location.origin)
-                                                if (res?.error) {
-                                                    console.error("Connection failed:", res.error)
-                                                    alert(`Connection failed: ${res.error}`)
-                                                    return
-                                                }
-                                                if (res?.url) {
-                                                    console.log("Navigating to:", res.url)
-                                                    window.location.href = res.url
-                                                }
-                                            } catch (err) {
-                                                console.error("Unexpected error connecting account:", err)
-                                                alert("An unexpected error occurred. Please try again.")
-                                            }
-                                        }}
+                                        onClick={() => handleConnect(platform.id)}
                                     >
                                         <div className={cn("h-10 w-10 flex items-center justify-center rounded-full", platform.bg)}>
                                             <platform.icon className={cn("h-5 w-5", platform.color)} />

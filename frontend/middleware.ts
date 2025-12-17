@@ -2,6 +2,11 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from './lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
+    // 1. Critical: Always allow auth callback to pass through unmodified
+    if (request.nextUrl.pathname.startsWith('/auth/callback')) {
+        return NextResponse.next()
+    }
+
     if (process.env.LAUNCH === 'OFF') {
         const path = request.nextUrl.pathname;
         const allowedPaths = ['/', '/waitlist', '/privacy', '/terms'];

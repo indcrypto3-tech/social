@@ -1,104 +1,72 @@
-# Project Structure
+# Project Structure Documentation
 
-This document provides a detailed overview of the Social Media Scheduler V2 codebase structure. The project is strictly separated into `backend` (API/Worker/DB) and `frontend` (UI/Next.js).
+This document defines the current structure of the Social Media Scheduler project.
+**IMPORTANT**: The project is in a hybrid state. It contains a "V2" structure split into `frontend` and `backend` directories, alongside "V1/Legacy" files in the root.
 
-## Architecture Diagram
-
-```mermaid
-graph TD
-    User[User Browser]
-    
-    subgraph Frontend [Frontend (Port 3000)]
-        UI[Next.js App Router]
-        API_Client[API Client lib/api/client.ts]
-        Auth_Middleware[Middleware (Route Protection)]
-    end
-    
-    subgraph Backend [Backend (Port 4000)]
-        API_Gateway[Next.js API Routes]
-        Error_Middleware[Error Handling Middleware]
-        DB[(PostgreSQL + Drizzle)]
-        Worker[BullMQ Worker]
-        Redis[(Redis)]
-    end
-    
-    User --> UI
-    UI -- "Fetch (Bearer Token)" --> API_Gateway
-    API_Client --> API_Gateway
-    API_Gateway --> DB
-    API_Gateway --> Worker
-    Worker --> DB
-    Worker --> Redis
-```
-
-## Root Directory
-
-### `backend/`
-Contains the server-side logic, API definitions, database connectivity, and background workers.
-*   **Tech Stack:** Next.js (API Routes), Drizzle ORM, BullMQ, Supabase Auth.
-
-### `frontend/`
-Contains the client-side UI, routing, and user interaction logic.
-*   **Tech Stack:** Next.js (App Router), Tailwind CSS, Shadcn UI, React Query.
-
-### `docs/`
-Documentation specific to the V2 architecture.
+**For all new development, prefer the `frontend/` and `backend/` directories unless strictly instructed otherwise.**
 
 ---
 
-## Backend Directory (`backend/`)
+## 1. Frontend Application (`frontend/`)
+**Tech Stack**: Next.js 14 (App Router), Tailwind CSS, Shadcn UI, Supabase Auth (Client).
+**Port**: Default (3000)
 
-### `app/api/`
-API Route Handlers (REST endpoints). **All DB Access happens here.**
-*   **`settings/`**: User profile and preference management.
-*   **`invites/`**: Team invitation handling (public check + acceptance).
-*   **`accounts/`**: Social media account management.
-*   **`ai/`**: AI generation endpoints.
-*   **`billing/`**: Stripe integration.
-*   **`media/`**: Media upload and management.
-*   **`posts/`**: Post creation, scheduling.
-*   **`webhooks/`**: External webhook handlers.
-
-### `worker/`
-Background job processing with BullMQ.
-*   **`index.ts`**: Main worker; processes 'publish-queue'.
-*   **`analytics-sync.ts`**: Scheduled analytics jobs.
-*   **`notifications.ts`**: Email notifications.
-
-### `lib/`
-Core logic.
-*   **`db/`**: Schema and Drizzle client.
-*   **`posting/`**: PostDispatcher.
-*   **`errors.ts`**: `AppError` and custom error classes.
-
-### `middleware/`
-*   **`error.ts`**: `withErrorHandler` HOF for centralized API error handling/logging.
-*   **`auth.ts`**: Request authentication helpers.
+### Key Directories
+*   **`frontend/app/`**: Main application routes.
+    *   `(auth)/`: Login/Register pages.
+    *   `(dashboard)/`: Protected application pages (Dashboard, Calendar, Settings).
+*   **`frontend/components/`**: UI Components (mostly Shadcn).
+*   **`frontend/lib/`**:
+    *   `api/`: **Crucial**. Contains the HTTP client (`client.ts`) that communicates with the Backend API.
+    *   `utils.ts`: Tailwind class merger.
+*   **`frontend/middleware.ts`**: Handles session refreshing and route protection.
 
 ---
 
-## Frontend Directory (`frontend/`)
+## 2. Backend Application (`backend/`)
+**Tech Stack**: Next.js (API Routes), Drizzle ORM, PostgreSQL, Redis, BullMQ.
+**Port**: 4000 (Run via `npm run dev` inside `backend/`)
 
-### `app/`
-Application routes. Logic here **MUST NOT** import `db`.
-*   **`global-error.tsx`**: Root error boundary.
-*   **`not-found.tsx`**: Global 404 page.
-*   **`lib/api/client.ts`**: Singleton API client.
-*   **`invite/[token]/`**: Invite acceptance page (uses API).
-*   **`(dashboard)/settings/`**: Settings page (uses API).
-
-### `lib/`
-*   **`api/client.ts`**: The ONLY place that calls the Backend. Handles 401s and Errors.
+### Key Directories
+*   **`backend/app/api/`**: **The Core API**. separation of concerns is strict here.
+    *   `accounts/`, `posts/`, `media/`: Feature-specific endpoints.
+*   **`backend/lib/`**: Shared logic.
+    *   `db/`: Drizzle Client and Schema definitions.
+    *   `posting/`: Logic for dispatching posts to social networks.
+*   **`backend/drizzle/`**: Database migrations and schema snapshots.
+*   **`backend/worker/`**: Background workers (BullMQ) for processing scheduled posts.
+*   **`backend/middleware/`**: Custom middleware for error handling and authentication verification.
 
 ---
 
-## Key Configuration
+## 3. Root / Legacy Directory (`./`)
+**Status**: Partially Deprecated / Mixed.
+Contains files from the previous single-app architecture.
 
-### Environment
-*   **Frontend:** `NEXT_PUBLIC_API_BASE_URL` (points to Backend).
-*   **Backend:** `DATABASE_URL`, `REDIS_URL`.
+*   `app/`: Legacy Next.js routes.
+*   `components/`: Legacy React components.
+*   `lib/`: Legacy utility functions.
+*   `worker/`: Legacy worker entry point.
+*   `doc/`: Documentation files.
 
-### Strict Rules
-1.  **No DB Access in Frontend**: Frontend must call Backend API.
-2.  **Auth Headers**: Frontend Server Components must pass Session Token in `Authorization` header.
-3.  **Error Handling**: All Backend routes must be wrapped in `withErrorHandler`.
+## AI Implementation Guide
+
+### Where to write code?
+*   **UI / Pages**: Write in `frontend/app/`.
+*   **API / Business Logic**: Write in `backend/app/api/`.
+*   **Database Schema**: Define in `backend/lib/db/schema.ts` (or `backend/drizzle/schema.ts` if split).
+*   **Background Jobs**: Define in `backend/worker/`.
+
+### Development Workflow
+1.  **Frontend**: Calls `frontend/lib/api/client.ts` -> functions call `NEXT_PUBLIC_API_BASE_URL` (Backend).
+2.  **Backend**: Receives request -> Authenticates -> Calls DB/Queue -> Returns JSON.
+
+### Database Access
+*   **Frontend**: NEVER access the DB directly.
+*   **Backend**: ALWAYS access DB via Drizzle (`backend/lib/db`).
+
+### Authentication
+*   Auth is handled by Supabase.
+*   Frontend manages the session.
+*   Frontend passes the Access Token in the `Authorization` header to the Backend.
+*   Backend verifies the token.

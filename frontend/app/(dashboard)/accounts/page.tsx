@@ -22,7 +22,7 @@ import {
 import { PageHeader } from "../components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase"; // Import client-side supabase
+import { createClient } from "@/lib/supabase/client";
 import { Provider } from "@supabase/supabase-js";
 
 const platforms = [
@@ -73,6 +73,8 @@ const platforms = [
 export default function AccountsPage() {
     const connectedAccounts: any[] = []; // Fetch from API later
 
+    const supabase = createClient(); // Use factory to ensure proper browser client instance
+
     const handleConnect = async (platformId: string) => {
         let provider: Provider;
         let scopes: string | undefined;
@@ -111,7 +113,7 @@ export default function AccountsPage() {
         console.log(`[Connect] Initiating client-side OAuth for ${platformId}`)
 
         try {
-            const { error } = await supabase.auth.signInWithOAuth({
+            const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: provider,
                 options: {
                     redirectTo: `${window.location.origin}/auth/callback?next=/dashboard/accounts`,
@@ -119,15 +121,25 @@ export default function AccountsPage() {
                     queryParams: {
                         access_type: 'offline',
                         prompt: 'consent',
-                    }
+                    },
+                    skipBrowserRedirect: true, // Force manual redirect to debug and prevent auto-redirect issues
                 },
             })
 
             if (error) {
                 console.error("OAuth Error:", error)
                 alert(`Failed to initiate connection: ${error.message}`)
+                return
             }
-            // Supabase client handles the redirect automatically
+
+            if (data?.url) {
+                console.log(`[Connect] Redirecting to: ${data.url}`)
+                window.location.href = data.url
+            } else {
+                console.error("OAuth Error: No redirect URL returned")
+                alert("Failed to generate authorization URL")
+            }
+
         } catch (err) {
             console.error("Unexpected error:", err)
             alert("An unexpected error occurred.")

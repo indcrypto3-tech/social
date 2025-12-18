@@ -22,12 +22,12 @@ export function ConnectTwitterButton({
         try {
             setIsLoading(true)
 
-            const { error } = await supabase.auth.signInWithOAuth({
+            const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'twitter',
                 options: {
                     redirectTo: `${window.location.origin}/auth/callback?next=/settings`,
                     scopes: 'tweet.read tweet.write users.read offline.access',
-                    skipBrowserRedirect: false,
+                    skipBrowserRedirect: true,
                 }
             })
 
@@ -35,12 +35,18 @@ export function ConnectTwitterButton({
                 throw error
             }
 
+            if (data?.url) {
+                window.location.href = data.url
+            } else {
+                throw new Error("No OAuth URL returned from Supabase")
+            }
+
         } catch (error) {
             console.error("Twitter Connect Error:", error)
             setIsLoading(false)
             toast({
                 title: "Connection Failed",
-                description: "Could not connect to Twitter. Please try again.",
+                description: error instanceof Error ? error.message : "Could not connect to Twitter. Please try again.",
                 variant: "destructive"
             })
         }

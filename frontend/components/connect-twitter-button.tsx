@@ -23,7 +23,7 @@ export function ConnectTwitterButton({
             setIsLoading(true)
 
             const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: 'twitter',
+                provider: 'x' as any, // 'x' is the correct provider key for this Supabase project setup
                 options: {
                     redirectTo: `${window.location.origin}/auth/callback?next=/settings`,
                     scopes: 'tweet.read tweet.write users.read offline.access',

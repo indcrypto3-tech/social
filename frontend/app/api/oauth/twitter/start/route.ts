@@ -17,8 +17,18 @@ export async function POST(request: Request) {
 
         const provider = getProvider('twitter');
         const { state, verifier, challenge } = await OAuthStateManager.create(user.id, 'twitter');
+
+        // Dynamically compute redirect URI
+        const origin = request.headers.get('origin') ||
+            `https://${request.headers.get('host')}` ||
+            'http://localhost:3000'; // Final fallback if headers missing (unlikely in Vercel)
+
+        // Clean up origin if needed (remove trailing slash)
+        const cleanOrigin = origin.replace(/\/$/, '');
+        const redirectUri = `${cleanOrigin}/api/oauth/twitter/callback`;
+
         // Pass challenge as second argument as updated in provider
-        const url = await provider.getAuthUrl(state, challenge);
+        const url = await provider.getAuthUrl(state, challenge, redirectUri);
 
         return NextResponse.json({ url });
     } catch (error: any) {

@@ -17,11 +17,12 @@ export class TwitterProvider implements OAuthProvider {
         }
     }
 
-    async getAuthUrl(state: string, challenge: string): Promise<string> {
+    async getAuthUrl(state: string, challenge: string, redirectUri?: string): Promise<string> {
+        const finalRedirectUri = redirectUri || this.redirectUri;
         const params = new URLSearchParams({
             response_type: 'code',
             client_id: this.clientId,
-            redirect_uri: this.redirectUri,
+            redirect_uri: finalRedirectUri,
             scope: 'tweet.read tweet.write users.read offline.access',
             state: state,
             code_challenge: challenge,
@@ -31,12 +32,13 @@ export class TwitterProvider implements OAuthProvider {
         return `https://twitter.com/i/oauth2/authorize?${params.toString()}`;
     }
 
-    async exchangeCode(code: string, verifier: string): Promise<TokenExchangeResult> {
+    async exchangeCode(code: string, verifier: string, redirectUri?: string): Promise<TokenExchangeResult> {
+        const finalRedirectUri = redirectUri || this.redirectUri;
         const tokenParams = new URLSearchParams({
             code,
             grant_type: 'authorization_code',
             client_id: this.clientId,
-            redirect_uri: this.redirectUri,
+            redirect_uri: finalRedirectUri,
             code_verifier: verifier,
         });
 

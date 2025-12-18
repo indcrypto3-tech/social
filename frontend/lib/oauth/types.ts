@@ -29,7 +29,7 @@ export interface SocialProfile {
 
 export interface OAuthProvider {
     name: string;
-    getAuthUrl(state: string, verifier?: string): Promise<string>;
-    exchangeCode(code: string, verifier?: string): Promise<TokenExchangeResult>;
+    getAuthUrl(state: string, verifier?: string, redirectUri?: string): Promise<string>;
+    exchangeCode(code: string, verifier?: string, redirectUri?: string): Promise<TokenExchangeResult>;
     getUserProfile(accessToken: string): Promise<SocialProfile>;
 }

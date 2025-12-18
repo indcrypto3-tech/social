@@ -30,7 +30,9 @@ export async function GET(request: Request) {
             throw new Error("Missing PKCE verifier in state");
         }
 
-        const tokens = await provider.exchangeCode(code, stateData.verifier);
+        const redirectUri = `${requestUrl.origin}/api/oauth/twitter/callback`;
+
+        const tokens = await provider.exchangeCode(code, stateData.verifier, redirectUri);
 
         // 3. Get User Profile
         const profile = await provider.getUserProfile(tokens.accessToken);

@@ -76,6 +76,42 @@ export default function AccountsPage() {
     const supabase = createClient(); // Use factory to ensure proper browser client instance
 
     const handleConnect = async (platformId: string) => {
+        // Special handling for Twitter/X via Backend OAuth 2.0 Flow
+        if (platformId === 'twitter') {
+            try {
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                if (sessionError || !session) {
+                    alert("Please log in to connect accounts.");
+                    return;
+                }
+
+                const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api';
+                const response = await fetch(`${apiUrl}/oauth/twitter/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Failed to start Twitter OAuth');
+                }
+
+                const data = await response.json();
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    throw new Error("No redirect URL returned from backend");
+                }
+            } catch (err: any) {
+                console.error("Twitter Connect Error:", err);
+                alert(`Connection failed: ${err.message}`);
+            }
+            return;
+        }
+
         let provider: Provider;
         let scopes: string | undefined;
 
@@ -87,10 +123,6 @@ export default function AccountsPage() {
             case 'instagram':
                 provider = 'instagram' as Provider
                 scopes = 'instagram_basic,instagram_content_publish'
-                break
-            case 'twitter':
-                provider = 'twitter'
-                scopes = 'tweet.read,tweet.write,users.read,offline.access'
                 break
             case 'linkedin':
                 provider = 'linkedin'

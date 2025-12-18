@@ -51,57 +51,8 @@ function AuthCallbackContent() {
                 // but it is often present or we should check `session.user.app_metadata.provider` or similar? 
                 // Actually `session.provider_token` is the standard place for OAuth 1.0/2.0 tokens immediately after flow.
 
-                const user = session.user
-                // Check if the most recent generic provider was twitter (X)
-                // or if we have specific metadata.
-                // Supabase doesn't always strictly tell us *which* provider just finished, 
-                // but we can infer from the identities.
+                // (Legacy Supabase OAuth logic removed: Twitter/Social syncing is now handled via backend-driven flow)
 
-                const twitterIdentity = user?.identities?.find(
-                    (id: any) => id.provider === 'twitter' || id.provider === 'x'
-                )
-
-                if (twitterIdentity) {
-                    // Get tokens. For OAuth 1.0a (Twitter), access_token is `provider_token`
-                    // Supabase puts these on the session object *only* on the callback redirect.
-                    const accessToken = (session as any).provider_token
-                    const refreshToken = (session as any).provider_refresh_token
-
-                    if (accessToken) {
-                        const payload = {
-                            platform: 'twitter',
-                            providerAccountId: twitterIdentity.id,
-                            username: user.user_metadata.user_name || user.user_metadata.name,
-                            accessToken: accessToken,
-                            refreshToken: refreshToken,
-                            // Twitter token expiration is not always provided or is long lived for OAuth 1.0 (though X is moving to 2.0)
-                            // We'll send what we have.
-                        }
-
-                        const response = await fetch('/api/oauth/connect', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${session.access_token}`
-                            },
-                            body: JSON.stringify(payload)
-                        })
-
-                        if (!response.ok) {
-                            console.error('Failed to sync Twitter account with backend')
-                            toast({
-                                title: "Connection Issue",
-                                description: "Connected to Twitter but failed to sync with our database. Please try reconnecting.",
-                                variant: "destructive"
-                            })
-                        } else {
-                            toast({
-                                title: "Success",
-                                description: "Twitter account connected successfully.",
-                            })
-                        }
-                    }
-                }
 
                 router.replace(next)
 

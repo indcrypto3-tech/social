@@ -1,5 +1,5 @@
 import { login } from '../actions'
-import { OAuthSignIn } from './oauth-signin'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,9 +39,7 @@ export default function LoginPage({ searchParams }: { searchParams: { error?: st
                         Login
                     </Button>
                 </form>
-                <div className="mt-4">
-                    <OAuthSignIn />
-                </div>
+
             </CardContent>
             <CardFooter>
                 <div className="w-full text-center text-sm">

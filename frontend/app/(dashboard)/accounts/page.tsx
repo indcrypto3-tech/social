@@ -24,6 +24,8 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Provider } from "@supabase/supabase-js";
+import { useSearchParams } from "next/navigation";
+import { useEffect, Suspense } from "react";
 
 const platforms = [
     {
@@ -70,6 +72,28 @@ const platforms = [
     }
 ]
 
+function AccountStatusListener() {
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const error = searchParams.get("error");
+        const success = searchParams.get("success");
+
+        if (error) {
+            alert(`Error: ${error}`);
+            // Clean up URL
+            window.history.replaceState({}, '', '/dashboard/accounts');
+        }
+
+        if (success) {
+            alert("Account connected successfully!");
+            window.history.replaceState({}, '', '/dashboard/accounts');
+        }
+    }, [searchParams]);
+
+    return null;
+}
+
 export default function AccountsPage() {
     const connectedAccounts: any[] = []; // Fetch from API later
 
@@ -85,11 +109,10 @@ export default function AccountsPage() {
                     return;
                 }
 
-                const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api';
-                const response = await fetch(`${apiUrl}/oauth/twitter/start`, {
+                // POST to local API route
+                const response = await fetch(`/api/oauth/twitter/start`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${session.access_token}`,
                         'Content-Type': 'application/json',
                     },
                 });
@@ -180,6 +203,9 @@ export default function AccountsPage() {
 
     return (
         <div className="flex flex-col gap-6">
+            <Suspense fallback={null}>
+                <AccountStatusListener />
+            </Suspense>
             <PageHeader heading="Connected Accounts" text="Manage your social media connections and permissions.">
                 <Dialog>
                     <DialogTrigger asChild>

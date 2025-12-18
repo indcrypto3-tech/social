@@ -2,6 +2,7 @@
 "use client";
 
 import { logout } from "@/app/(auth)/actions";
+import { useSession } from "@/lib/auth/session-provider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -64,6 +65,7 @@ const sidebarNavItems = [
 
 export function Sidebar({ className }: { className?: string }) {
     const pathname = usePathname();
+    const { signOut } = useSession();
 
     return (
         <div className={cn("flex h-full flex-col border-r bg-card text-card-foreground", className)}>
@@ -117,7 +119,7 @@ export function Sidebar({ className }: { className?: string }) {
                 <Button
                     variant="ghost"
                     className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                    onClick={async () => await logout()}
+                    onClick={async () => await signOut()}
                 >
                     <LogOut className="h-4 w-4" />
                     Log Out

@@ -2,6 +2,7 @@
 "use client";
 
 import { logout } from "@/app/(auth)/actions";
+import { useSession } from "@/lib/auth/session-provider";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useTheme } from "next-themes";
@@ -36,7 +37,9 @@ import { Fragment } from "react";
 
 export function Header() {
     const pathname = usePathname();
+
     const { setTheme } = useTheme();
+    const { signOut } = useSession();
 
     // Generate breadcrumbs from path
     const segments = pathname.split('/').filter(Boolean);
@@ -154,7 +157,7 @@ export function Header() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                                 className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-medium p-3"
-                                onClick={async () => await logout()}
+                                onClick={async () => await signOut()}
                             >
                                 <LogOut className="mr-2 h-4 w-4" /> Logout
                             </DropdownMenuItem>

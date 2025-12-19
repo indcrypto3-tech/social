@@ -9,6 +9,7 @@ export const postStatusEnum = pgEnum('post_status', ['draft', 'scheduled', 'publ
 export const destinationStatusEnum = pgEnum('destination_status', ['pending', 'success', 'failed']);
 export const roleEnum = pgEnum('role', ['admin', 'editor', 'viewer']);
 export const teamRoleEnum = pgEnum('team_role', ['owner', 'editor', 'viewer']);
+export const approvalStatusEnum = pgEnum('approval_status', ['pending', 'approved', 'rejected', 'none']);
 export const notificationTypeEnum = pgEnum('notification_type', ['post_failed', 'post_published', 'weekly_digest']);
 
 
@@ -60,6 +61,9 @@ export const scheduledPosts = pgTable('scheduled_posts', {
   mediaUrls: jsonb('media_urls').$type<string[]>(), // Array of S3 URLs
   scheduledAt: timestamp('scheduled_at').notNull(),
   status: postStatusEnum('status').default('draft').notNull(),
+  approvalStatus: approvalStatusEnum('approval_status').default('none').notNull(),
+  reviewedBy: uuid('reviewed_by').references(() => users.id),
+  reviewedAt: timestamp('reviewed_at'),
   platformConfigs: jsonb('platform_configs'), // e.g., { instagram: { type: 'reel' } }
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -255,6 +259,24 @@ export const teamInvitesRelations = relations(teamInvites, ({ one }) => ({
   team: one(teams, {
     fields: [teamInvites.teamId],
     references: [teams.id],
+  }),
+}));
+
+
+export const sessions = pgTable('sessions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
   }),
 }));
 

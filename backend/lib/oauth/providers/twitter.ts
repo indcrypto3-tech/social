@@ -94,6 +94,38 @@ export class TwitterProvider implements OAuthProvider {
             name: user.name,
             avatarUrl: user.profile_image_url,
             rawData: user
+
+        };
+    }
+
+    async refreshAccessToken(refreshToken: string): Promise<TokenExchangeResult> {
+        const tokenParams = new URLSearchParams({
+            grant_type: 'refresh_token',
+            refresh_token: refreshToken,
+            client_id: this.clientId,
+        });
+
+        const basicAuth = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+
+        const response = await fetch('https://api.twitter.com/2/oauth2/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': `Basic ${basicAuth}`,
+            },
+            body: tokenParams.toString(),
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Twitter Token Refresh Failed: ${text}`);
+        }
+
+        const data = await response.json();
+        return {
+            accessToken: data.access_token,
+            refreshToken: data.refresh_token, // Twitter rotates refresh tokens!
+            expiresIn: data.expires_in,
         };
     }
 }

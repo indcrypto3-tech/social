@@ -1,3 +1,4 @@
+
 import { validateSession } from '../lib/session';
 import { NextResponse } from 'next/server';
 
@@ -7,7 +8,7 @@ export type AuthenticatedContext = {
     };
     session: {
         id: string;
-        expiresAt: string;
+        expiresAt: Date;
     };
 };
 
@@ -27,7 +28,7 @@ export async function authGuard() {
 
     return {
         user: { id: session.userId },
-        session: { id: session.sessionId, expiresAt: session.expiresAt },
+        session: { id: session.id, expiresAt: session.expiresAt },
     };
 }
 

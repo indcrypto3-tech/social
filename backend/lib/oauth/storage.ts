@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { socialAccounts } from '@/lib/db/schema';
 import { platformEnum } from '@/lib/db/schema';
 import { SocialProfile, TokenExchangeResult } from './types';
+import { encrypt } from '@/lib/crypto';
 
 export class OAuthAccountStorage {
     static async storeAccount(
@@ -19,14 +20,16 @@ export class OAuthAccountStorage {
 
         // Validate platform enum
         const platformKey = platform as (typeof platformEnum.enumValues)[number];
+        const encryptedAccessToken = encrypt(tokens.accessToken);
+        const encryptedRefreshToken = tokens.refreshToken ? encrypt(tokens.refreshToken) : null;
 
         await db.insert(socialAccounts).values({
             userId: userId,
             platform: platformKey,
             platformAccountId: profile.id,
             accountName: profile.username || profile.name || 'Unknown',
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken || null,
+            accessToken: encryptedAccessToken,
+            refreshToken: encryptedRefreshToken,
             tokenExpiresAt: expiresAt,
             metadata: {
                 name: profile.name,
@@ -39,8 +42,8 @@ export class OAuthAccountStorage {
             target: [socialAccounts.platform, socialAccounts.platformAccountId],
             set: {
                 userId: userId, // Claim ownership
-                accessToken: tokens.accessToken,
-                refreshToken: tokens.refreshToken || null,
+                accessToken: encryptedAccessToken,
+                refreshToken: encryptedRefreshToken,
                 tokenExpiresAt: expiresAt,
                 accountName: profile.username || profile.name || 'Unknown',
                 metadata: {
@@ -51,6 +54,7 @@ export class OAuthAccountStorage {
                     ...profile.rawData
                 },
                 updatedAt: new Date(),
+                isActive: true
             }
         });
     }

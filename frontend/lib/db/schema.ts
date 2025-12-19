@@ -43,6 +43,7 @@ export const socialAccounts = pgTable('social_accounts', {
     tokenExpiresAt: timestamp('token_expires_at'),
     supportsRefresh: boolean('supports_refresh').default(true).notNull(), // False for X Free plan
     metadata: jsonb('metadata'), // Any extra profile info
+    isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => {

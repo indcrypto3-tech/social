@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Provider } from "@supabase/supabase-js";
 import { useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
+import React, { useEffect, Suspense } from "react";
 
 const platforms = [
     {
@@ -102,13 +102,32 @@ function AccountStatusListener() {
 }
 
 export default function AccountsPage() {
-    const connectedAccounts: any[] = []; // Fetch from API later
+    const [connectedAccounts, setConnectedAccounts] = React.useState<any[]>([]);
+    const [loading, setLoading] = React.useState(true);
 
     const supabase = createClient(); // Use factory to ensure proper browser client instance
 
+    useEffect(() => {
+        const fetchAccounts = async () => {
+            try {
+                const response = await fetch('/api/accounts');
+                if (response.ok) {
+                    const data = await response.json();
+                    setConnectedAccounts(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch accounts:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAccounts();
+    }, []);
+
     const handleConnect = async (platformId: string) => {
-        // Special handling for Twitter/X via Backend OAuth 2.0 Flow
-        if (platformId === 'twitter') {
+        // Special handling for Backend OAuth Flows
+        if (['twitter', 'facebook', 'linkedin', 'instagram'].includes(platformId)) {
             try {
                 const { data: { session }, error: sessionError } = await supabase.auth.getSession();
                 if (sessionError || !session) {
@@ -116,8 +135,11 @@ export default function AccountsPage() {
                     return;
                 }
 
+                // Map instagram to facebook flow as it uses FB Graph API
+                const targetProvider = platformId === 'instagram' ? 'facebook' : platformId;
+
                 // POST to local API route
-                const response = await fetch(`/api/oauth/twitter/start`, {
+                const response = await fetch(`/api/oauth/${targetProvider}/start`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -126,7 +148,7 @@ export default function AccountsPage() {
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || 'Failed to start Twitter OAuth');
+                    throw new Error(errorData.error || `Failed to start ${targetProvider} OAuth`);
                 }
 
                 const data = await response.json();
@@ -136,7 +158,7 @@ export default function AccountsPage() {
                     throw new Error("No redirect URL returned from backend");
                 }
             } catch (err: any) {
-                console.error("Twitter Connect Error:", err);
+                console.error(`${platformId} Connect Error:`, err);
                 alert(`Connection failed: ${err.message}`);
             }
             return;
@@ -146,18 +168,6 @@ export default function AccountsPage() {
         let scopes: string | undefined;
 
         switch (platformId) {
-            case 'facebook':
-                provider = 'facebook'
-                scopes = 'pages_show_list,pages_read_engagement,pages_manage_posts'
-                break
-            case 'instagram':
-                provider = 'instagram' as Provider
-                scopes = 'instagram_basic,instagram_content_publish'
-                break
-            case 'linkedin':
-                provider = 'linkedin'
-                scopes = 'w_member_social,r_liteprofile'
-                break
             case 'youtube':
                 provider = 'google'
                 scopes = 'https://www.googleapis.com/auth/youtube.readonly,https://www.googleapis.com/auth/youtube.upload'
@@ -207,6 +217,24 @@ export default function AccountsPage() {
             alert("An unexpected error occurred.")
         }
     }
+
+    const handleDisconnect = async (accountId: string) => {
+        if (!confirm("Are you sure you want to disconnect this account?")) return;
+
+        try {
+            const response = await fetch(`/api/accounts?id=${accountId}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) throw new Error("Failed to disconnect");
+
+            // Remove from state
+            setConnectedAccounts(prev => prev.filter(acc => acc.id !== accountId));
+        } catch (err) {
+            console.error("Disconnect error:", err);
+            alert("Failed to disconnect account");
+        }
+    };
 
     return (
         <div className="flex flex-col gap-6">
@@ -295,10 +323,10 @@ export default function AccountsPage() {
                                 <CardTitle className="text-sm font-medium">
                                     {account.platform}
                                 </CardTitle>
-                                {account.status === 'connected' ? (
+                                {account.isActive ? (
                                     <Badge variant="default" className="bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20">Active</Badge>
                                 ) : (
-                                    <Badge variant="destructive">Error</Badge>
+                                    <Badge variant="destructive">Inactive</Badge>
                                 )}
                             </CardHeader>
                             <CardContent className="pt-6">
@@ -314,7 +342,12 @@ export default function AccountsPage() {
                                 </div>
                             </CardContent>
                             <CardFooter className="bg-muted/5 border-t p-3">
-                                <Button variant="ghost" size="sm" className="w-full text-muted-foreground hover:text-destructive">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full text-muted-foreground hover:text-destructive"
+                                    onClick={() => handleDisconnect(account.id)}
+                                >
                                     Disconnect
                                 </Button>
                             </CardFooter>

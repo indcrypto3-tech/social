@@ -1,24 +1,50 @@
-import { NextRequest } from 'next/server';
-import { db } from '../../../lib/db';
-import { socialAccounts } from '../../../lib/db/schema';
-import { withErrorHandler, normalizeResponse } from '../../../middleware/error';
-import { eq } from 'drizzle-orm';
-import { getUser } from '../../../middleware/auth';
-import { AuthError } from '../../../lib/errors';
 
-export const GET = withErrorHandler(async (req: Request) => {
-    const user = await getUser(req);
-    if (!user) throw new AuthError();
+import { NextResponse } from 'next/server';
+import { getUser } from '@/middleware/auth';
+import { db } from '@/lib/db';
+import { socialAccounts } from '@/lib/db/schema';
+import { eq, and } from 'drizzle-orm';
 
-    const accounts = await db.select().from(socialAccounts).where(eq(socialAccounts.userId, user.id));
-    return normalizeResponse(accounts);
-});
+export async function GET(request: Request) {
+    try {
+        const user = await getUser(request);
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-export const POST = withErrorHandler(async (request: Request) => {
-    // This would handle the final step of OAuth or manual token addition
-    return normalizeResponse({ message: "Not implemented" }, 200);
-    // Ideally 501, but normalizeResponse defaults to success=true. 
-    // If we want to return error, we should throw it, but "Not implemented" can be a success message saying "it's okay, nothing happened".
-    // Or simpler:
-    // throw new Error("Not implemented");
-});
+        const accounts = await db.query.socialAccounts.findMany({
+            where: eq(socialAccounts.userId, user.id),
+            orderBy: (socialAccounts, { desc }) => [desc(socialAccounts.createdAt)],
+        });
+
+        return NextResponse.json(accounts);
+    } catch (error: any) {
+        console.error('Get Accounts Error:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
+
+export async function DELETE(request: Request) {
+    try {
+        const user = await getUser(request);
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { searchParams } = new URL(request.url);
+        const accountId = searchParams.get('id');
+
+        if (!accountId) {
+            return NextResponse.json({ error: 'Missing account ID' }, { status: 400 });
+        }
+
+        // Verify ownership before deleting
+        await db.delete(socialAccounts)
+            .where(and(eq(socialAccounts.id, accountId), eq(socialAccounts.userId, user.id)));
+
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        console.error('Delete Account Error:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}

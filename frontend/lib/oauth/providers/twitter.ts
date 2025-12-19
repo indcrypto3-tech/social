@@ -23,7 +23,7 @@ export class TwitterProvider implements OAuthProvider {
             response_type: 'code',
             client_id: this.clientId,
             redirect_uri: finalRedirectUri,
-            scope: 'tweet.read tweet.write users.read offline.access',
+            scope: 'tweet.read tweet.write users.read',
             state: state,
             code_challenge: challenge,
             code_challenge_method: 'S256',

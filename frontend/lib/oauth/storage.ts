@@ -28,6 +28,7 @@ export class OAuthAccountStorage {
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken || null,
             tokenExpiresAt: expiresAt,
+            supportsRefresh: !!tokens.refreshToken,
             metadata: {
                 name: profile.name,
                 username: profile.username,
@@ -42,6 +43,7 @@ export class OAuthAccountStorage {
                 accessToken: tokens.accessToken,
                 refreshToken: tokens.refreshToken || null,
                 tokenExpiresAt: expiresAt,
+                supportsRefresh: !!tokens.refreshToken,
                 accountName: profile.username || profile.name || 'Unknown',
                 metadata: {
                     name: profile.name,

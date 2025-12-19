@@ -86,7 +86,14 @@ function AccountStatusListener() {
         }
 
         if (success) {
-            alert("Account connected successfully!");
+            const platform = searchParams.get("platform");
+            const limited = searchParams.get("limited");
+
+            if (platform === 'twitter' && limited === 'true') {
+                alert("X (Twitter) connected successfully! (Note: Free plan has limited scheduling capabilities)");
+            } else {
+                alert("Account connected successfully!");
+            }
             window.history.replaceState({}, '', '/dashboard/accounts');
         }
     }, [searchParams]);

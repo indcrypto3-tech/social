@@ -45,7 +45,7 @@ export async function GET(request: Request) {
             profile
         );
 
-        return NextResponse.redirect(`${requestUrl.origin}/dashboard/accounts?success=true`);
+        return NextResponse.redirect(`${requestUrl.origin}/dashboard/accounts?success=true&platform=twitter&limited=true`);
     } catch (err: any) {
         console.error("OAuth Callback Error:", err);
         return NextResponse.redirect(`${requestUrl.origin}/dashboard/accounts?error=${encodeURIComponent(err.message)}`);

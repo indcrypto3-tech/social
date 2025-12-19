@@ -41,6 +41,7 @@ export const socialAccounts = pgTable('social_accounts', {
     accessToken: text('access_token').notNull(), // Encrypted ideally
     refreshToken: text('refresh_token'),
     tokenExpiresAt: timestamp('token_expires_at'),
+    supportsRefresh: boolean('supports_refresh').default(true).notNull(), // False for X Free plan
     metadata: jsonb('metadata'), // Any extra profile info
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),

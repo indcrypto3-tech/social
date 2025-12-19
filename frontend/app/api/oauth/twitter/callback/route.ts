@@ -13,11 +13,11 @@ export async function GET(request: Request) {
     const error = requestUrl.searchParams.get("error");
 
     if (error) {
-        return NextResponse.redirect(`${requestUrl.origin}/dashboard/accounts?error=${error}`);
+        return NextResponse.redirect(`${requestUrl.origin}/accounts?error=${error}`);
     }
 
     if (!code || !state) {
-        return NextResponse.redirect(`${requestUrl.origin}/dashboard/accounts?error=missing_params`);
+        return NextResponse.redirect(`${requestUrl.origin}/accounts?error=missing_params`);
     }
 
     try {
@@ -45,9 +45,9 @@ export async function GET(request: Request) {
             profile
         );
 
-        return NextResponse.redirect(`${requestUrl.origin}/dashboard/accounts?success=true&platform=twitter&limited=true`);
+        return NextResponse.redirect(`${requestUrl.origin}/accounts?success=true&platform=twitter&limited=true`);
     } catch (err: any) {
         console.error("OAuth Callback Error:", err);
-        return NextResponse.redirect(`${requestUrl.origin}/dashboard/accounts?error=${encodeURIComponent(err.message)}`);
+        return NextResponse.redirect(`${requestUrl.origin}/accounts?error=${encodeURIComponent(err.message)}`);
     }
 }

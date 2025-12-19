@@ -82,7 +82,7 @@ function AccountStatusListener() {
         if (error) {
             alert(`Error: ${error}`);
             // Clean up URL
-            window.history.replaceState({}, '', '/dashboard/accounts');
+            window.history.replaceState({}, '', '/accounts');
         }
 
         if (success) {

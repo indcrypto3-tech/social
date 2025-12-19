@@ -31,7 +31,7 @@ export function InviteMember() {
 
         if (res?.error) {
             toast({
-                title: 'Error',
+                title: 'Invite failed',
                 description: res.error,
                 variant: 'destructive',
             });

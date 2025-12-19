@@ -1,9 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { CreditCard } from 'lucide-react'
+import { CreditCard, Loader2 } from 'lucide-react'
+import { apiClient } from '@/lib/api/client'
 
 // Mock usage data - In real app, fetch from DB
 const USAGE = {
@@ -12,7 +14,24 @@ const USAGE = {
 }
 
 export function BillingSettings({ user }: { user: any }) {
+    const [loading, setLoading] = useState(false)
     const isPro = user.subscriptionTier === 'pro' || user.subscriptionTier === 'business'
+
+    const handleManage = async () => {
+        setLoading(true)
+        try {
+            const data = await apiClient<{ url: string }>('/billing/portal', {
+                method: 'POST'
+            })
+            if (data.url) {
+                window.location.href = data.url
+            }
+        } catch (error) {
+            // Toast handled by apiClient
+        } finally {
+            setLoading(false)
+        }
+    }
 
     return (
         <Card>
@@ -59,11 +78,10 @@ export function BillingSettings({ user }: { user: any }) {
                     {/* Placeholder for billing info */}
                     Billing is managed via Stripe.
                 </div>
-                <form action="/api/billing/portal" method="POST">
-                    <Button type="submit">
-                        Manage Subscription
-                    </Button>
-                </form>
+                <Button onClick={handleManage} disabled={loading}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Manage Subscription
+                </Button>
             </CardFooter>
         </Card>
     )

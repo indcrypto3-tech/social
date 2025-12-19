@@ -19,6 +19,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type MediaItem = {
     id: string;
@@ -34,6 +44,7 @@ export default function MediaList({ initialData }: { initialData: MediaItem[] })
     const [isUploading, setIsUploading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState<SortOption>('newest');
+    const [deleteItem, setDeleteItem] = useState<MediaItem | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast()
@@ -47,29 +58,46 @@ export default function MediaList({ initialData }: { initialData: MediaItem[] })
         const file = event.target.files?.[0];
         if (!file) return;
 
+        // Validation: Size < 50MB (Backend limit)
+        if (file.size > 50 * 1024 * 1024) {
+            toast({ title: "Upload Failed", description: "File size exceeds 50MB limit.", variant: "destructive" });
+            return;
+        }
+
         setIsUploading(true);
         const formData = new FormData();
         formData.append('file', file);
 
         try {
             await uploadMedia(formData);
-            toast({ title: "Success", description: "Image uploaded successfully" });
+            toast({
+                variant: 'success',
+                title: "Success",
+                description: "Media uploaded successfully"
+            });
+            router.refresh();
         } catch (error) {
-            toast({ title: "Error", description: "Failed to upload image", variant: "destructive" });
+            toast({
+                title: "Upload Failed",
+                description: error instanceof Error ? error.message : "Failed to upload media",
+                variant: "destructive"
+            });
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
-    const handleDelete = async (id: string, url: string) => {
-        // In a real app, use a custom Dialog instead of confirm
-        if (!confirm('Are you sure you want to delete this image?')) return;
+    const confirmDelete = async () => {
+        if (!deleteItem) return;
         try {
-            await deleteMedia(id, url);
-            toast({ title: "Deleted", description: "Image deleted successfully" });
+            await deleteMedia(deleteItem.id, deleteItem.url);
+            toast({ title: "Deleted", description: "Media deleted successfully" });
+            router.refresh(); // Ensure list updates
         } catch (error) {
-            toast({ title: "Error", description: "Failed to delete image", variant: "destructive" });
+            toast({ title: "Error", description: "Failed to delete media", variant: "destructive" });
+        } finally {
+            setDeleteItem(null);
         }
     }
 
@@ -182,9 +210,10 @@ export default function MediaList({ initialData }: { initialData: MediaItem[] })
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                     {filteredAndSortedData.map((item) => (
                         <Card key={item.id} className="group relative overflow-hidden aspect-square border-0 ring-1 ring-border bg-muted/10 hover:shadow-xl transition-all duration-300">
-                            <div className="absolute inset-0 bg-muted/20 animate-pulse" /> {/* Placeholder loading skeleton effect if needed, but Image handles loading */}
+                            {/* Visual only overlay for selection if needed later */}
+                            <div className="absolute inset-0 bg-muted/20 animate-pulse" />
                             <div className="relative w-full h-full">
-                                {item.fileType.startsWith('video') ? (
+                                {item.fileType?.startsWith('video') ? (
                                     <video
                                         src={item.url}
                                         className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
@@ -211,7 +240,10 @@ export default function MediaList({ initialData }: { initialData: MediaItem[] })
                                         variant="destructive"
                                         size="icon"
                                         className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-[-10px] group-hover:translate-y-0"
-                                        onClick={() => handleDelete(item.id, item.url)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeleteItem(item);
+                                        }}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
@@ -229,6 +261,23 @@ export default function MediaList({ initialData }: { initialData: MediaItem[] })
                     ))}
                 </div>
             )}
+
+            <AlertDialog open={!!deleteItem} onOpenChange={(open) => !open && setDeleteItem(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Media?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete <b>{deleteItem?.fileName}</b>? This action cannot be undone and will remove the file from all posts using it.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

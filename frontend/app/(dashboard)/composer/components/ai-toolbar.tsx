@@ -68,7 +68,7 @@ export function AIToolbar({ onContentChange, currentContent, className }: AITool
             const result = await generateCaptionAction(captionPrompt, captionPlatform, captionTone);
             setGeneratedCaption(result);
         } catch (error) {
-            toast({ title: "Error", description: "Failed to generate caption", variant: "destructive" });
+            toast({ title: "Error", description: "Caption generation failed", variant: "destructive" });
         } finally {
             setLoading(false);
         }
@@ -148,7 +148,7 @@ export function AIToolbar({ onContentChange, currentContent, className }: AITool
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label>What is this post about?</Label>
+                            <Label>What is this post about? (or text to improve)</Label>
                             <Textarea
                                 placeholder="Ex: Launching our new SaaS analytics dashboard..."
                                 value={captionPrompt}
@@ -215,6 +215,23 @@ export function AIToolbar({ onContentChange, currentContent, className }: AITool
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                onClick={() => {
+                    if (!currentContent) {
+                        toast({ title: "Input required", description: "Write something first to improve.", variant: "destructive" });
+                        return;
+                    }
+                    setCaptionPrompt(currentContent);
+                    setIsCaptionOpen(true);
+                }}
+            >
+                <Wand2 className="w-4 h-4" />
+                Improve
+            </Button>
 
             {/* Hashtag Generator */}
             <Dialog open={isHashtagOpen} onOpenChange={setIsHashtagOpen}>

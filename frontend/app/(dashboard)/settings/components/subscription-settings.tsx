@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, CreditCard } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
+import { apiClient } from '@/lib/api/client'
 
 interface SubscriptionSettingsProps {
     plan: string
@@ -14,24 +14,22 @@ interface SubscriptionSettingsProps {
 
 export function SubscriptionSettings({ plan, status }: SubscriptionSettingsProps) {
     const [loading, setLoading] = useState(false)
-    const { toast } = useToast()
     const router = useRouter()
 
     async function handlePortal() {
         setLoading(true)
         try {
-            const res = await fetch('/api/billing/portal', {
+            const data = await apiClient<{ url: string }>('/billing/portal', {
                 method: 'POST'
             })
-            const data = await res.json()
+
             if (data.url) {
                 window.location.href = data.url
             } else {
-                // Fallback if no portal url (maybe no customer id yet), go to billing page
                 router.push('/billing')
             }
         } catch (error) {
-            toast({ title: "Error", description: "Something went wrong.", variant: "destructive" })
+            // Toast managed by apiClient
             router.push('/billing')
         } finally {
             setLoading(false)

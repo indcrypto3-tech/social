@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Plus, Clock, Video, Image as ImageIcon, Calendar as CalendarIcon, MoreHorizontal, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Clock, Video, Image as ImageIcon, Calendar as CalendarIcon, MoreHorizontal, Loader2, List, LayoutGrid } from "lucide-react";
 import {
     startOfMonth,
     endOfMonth,
@@ -17,7 +17,8 @@ import {
     isSameDay,
     parseISO,
     setHours,
-    setMinutes
+    setMinutes,
+    isToday
 } from 'date-fns';
 import { cn } from "@/lib/utils";
 import Link from 'next/link';
@@ -28,7 +29,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { updatePost, reschedulePost } from '../posts/actions'; // Ensure these are exported from actions.ts
+import { updatePost, reschedulePost } from '../posts/actions';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // DnD Kit
 import { DndContext, DragOverlay, useDraggable, useDroppable, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
@@ -49,8 +51,6 @@ type Post = {
     }[];
 };
 
-// --- Components ---
-
 function DraggablePost({ post, onClick }: { post: Post, onClick: (p: Post) => void }) {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
         id: post.id,
@@ -70,7 +70,6 @@ function DraggablePost({ post, onClick }: { post: Post, onClick: (p: Post) => vo
             {...listeners}
             {...attributes}
             onClick={(e) => {
-                // Prevent onClick if dragging
                 if (!isDragging) onClick(post);
             }}
             className={cn(
@@ -92,7 +91,7 @@ function DraggablePost({ post, onClick }: { post: Post, onClick: (p: Post) => vo
     );
 }
 
-function DroppableDay({ date, children, isCurrentMonth, isSelected, onClick, isToday }: any) {
+function DroppableDay({ date, children, isCurrentMonth, isSelected, onClick, isTodayDay }: any) {
     const { setNodeRef, isOver } = useDroppable({
         id: date.toISOString(),
         data: { date }
@@ -113,7 +112,7 @@ function DroppableDay({ date, children, isCurrentMonth, isSelected, onClick, isT
             <div className="flex items-center justify-between mb-1">
                 <span className={cn(
                     "text-sm font-medium h-7 w-7 rounded-full flex items-center justify-center transition-all",
-                    isToday ? "bg-primary text-primary-foreground font-bold shadow-sm" :
+                    isTodayDay ? "bg-primary text-primary-foreground font-bold shadow-sm" :
                         isSelected ? "text-primary font-bold" : "text-muted-foreground",
                     isOver && "scale-110"
                 )}>
@@ -134,17 +133,23 @@ interface RawPost extends Omit<Post, 'scheduledAt'> {
 
 export default function CalendarView({ posts }: { posts: RawPost[] }) {
     const { toast } = useToast();
-    // Normalize dates
-    const safePosts = useMemo(() => posts.map(p => ({
-        ...p,
-        scheduledAt: new Date(p.scheduledAt)
-    })), [posts]);
+
+    // Initial state setup properly typed
+    const [localPosts, setLocalPosts] = useState<Post[]>([]);
+
+    useEffect(() => {
+        setLocalPosts(posts.map(p => ({
+            ...p,
+            scheduledAt: new Date(p.scheduledAt)
+        })));
+    }, [posts]);
 
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [activeId, setActiveId] = useState<string | null>(null);
     const [editingPost, setEditingPost] = useState<Post | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [view, setView] = useState<'calendar' | 'list'>('calendar');
 
     // Filter state
     const [filterPlatform, setFilterPlatform] = useState<string>('all');
@@ -156,15 +161,14 @@ export default function CalendarView({ posts }: { posts: RawPost[] }) {
 
     const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
     const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
-    const today = new Date();
 
     const filteredPosts = useMemo(() => {
-        return safePosts.filter(post => {
+        return localPosts.filter(post => {
             if (filterStatus !== 'all' && post.status !== filterStatus) return false;
             if (filterPlatform !== 'all' && !post.destinations.some((d: any) => d.socialAccount.platform === filterPlatform)) return false;
             return true;
         });
-    }, [safePosts, filterStatus, filterPlatform]);
+    }, [localPosts, filterStatus, filterPlatform]);
 
     const getPostsForDay = (day: Date) => {
         return filteredPosts.filter(post => isSameDay(post.scheduledAt, day));
@@ -185,53 +189,80 @@ export default function CalendarView({ posts }: { posts: RawPost[] }) {
         const newDateIso = over.id as string;
         const newDate = new Date(newDateIso);
 
-        // Use the original time, but new date
-        const post = safePosts.find(p => p.id === postId);
-        if (!post) return;
+        const postIndex = localPosts.findIndex(p => p.id === postId);
+        if (postIndex === -1) return;
+        const originalPost = localPosts[postIndex];
 
-        if (isSameDay(post.scheduledAt, newDate)) return; // No change
+        if (isSameDay(originalPost.scheduledAt, newDate)) return;
 
-        const updatedDate = setMinutes(setHours(newDate, post.scheduledAt.getHours()), post.scheduledAt.getMinutes());
+        // Preserve time, change date
+        const updatedDate = setMinutes(setHours(newDate, originalPost.scheduledAt.getHours()), originalPost.scheduledAt.getMinutes());
 
-        // Optimistic UI could be handled here if we had local state for posts, 
-        // but for now we rely on server revalidation which is fast enough usually.
+        // Optimistic Update
+        const updatedPost = { ...originalPost, scheduledAt: updatedDate };
+        setLocalPosts(prev => {
+            const newPosts = [...prev];
+            newPosts[postIndex] = updatedPost;
+            return newPosts;
+        });
 
         try {
             await reschedulePost(postId, updatedDate);
-            toast({ title: "Rescheduled", description: `Post moved to ${format(updatedDate, 'MMM d, yyyy')}` });
+            toast({ variant: 'success', title: "Post Rescheduled", description: `Moved to ${format(updatedDate, 'MMM d, yyyy')}` });
         } catch (error: any) {
-            toast({ title: "Error", description: error.message, variant: "destructive" });
+            // Rollback
+            setLocalPosts(prev => {
+                const newPosts = [...prev];
+                newPosts[postIndex] = originalPost;
+                return newPosts;
+            });
+            toast({ title: "Failed to reschedule post", description: error.message, variant: "destructive" });
         }
     };
 
-    // Edit Handlers
     const handleSaveEdit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingPost) return;
         setIsSaving(true);
         try {
-            // We only support content & time edit in this simple modal
             await updatePost(editingPost.id, {
                 content: editingPost.content || '',
                 scheduledAt: editingPost.scheduledAt
             });
             setEditingPost(null);
-            toast({ title: "Updated", description: "Post updated successfully" });
+            toast({ variant: 'success', title: "Updated", description: "Post updated successfully" });
+
+            // Should also update local state if we want instant reflection without page reload dependency
+            // But actions.ts revalidates path, so router refresh usually handles it.
         } catch (err: any) {
-            toast({ title: "Error", description: err.message, variant: "destructive" });
+            toast({ title: "Update Failed", description: err.message, variant: "destructive" });
         } finally {
             setIsSaving(false);
         }
     };
 
-    const activePost = activeId ? safePosts.find(p => p.id === activeId) : null;
+    const activePost = activeId ? localPosts.find(p => p.id === activeId) : null;
 
     return (
         <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <div className="flex flex-col gap-6 h-[calc(100vh-8rem)]">
-                <PageHeader heading="Content Calendar" text="View and manage user scheduled posts.">
+                <PageHeader heading="Content Calendar" text="View and manage and reschedule your posts.">
                     <div className="flex items-center gap-2">
-                        {/* Filters could go here */}
+                        <div className="flex p-1 bg-muted rounded-md border text-muted-foreground mr-2">
+                            <button
+                                onClick={() => setView('calendar')}
+                                className={cn("p-1.5 rounded-sm hover:bg-background hover:text-foreground transition-all", view === 'calendar' && "bg-background text-foreground shadow-sm")}
+                            >
+                                <LayoutGrid className="h-4 w-4" />
+                            </button>
+                            <button
+                                onClick={() => setView('list')}
+                                className={cn("p-1.5 rounded-sm hover:bg-background hover:text-foreground transition-all", view === 'list' && "bg-background text-foreground shadow-sm")}
+                            >
+                                <List className="h-4 w-4" />
+                            </button>
+                        </div>
+
                         <select
                             className="h-8 rounded-md border text-xs bg-background px-2"
                             value={filterPlatform}
@@ -244,18 +275,22 @@ export default function CalendarView({ posts }: { posts: RawPost[] }) {
                             <option value="linkedin">LinkedIn</option>
                         </select>
 
-                        <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>Today</Button>
-                        <div className="flex items-center rounded-md border bg-background shadow-sm">
-                            <Button variant="ghost" size="icon" onClick={prevMonth} className="h-8 w-8 rounded-none rounded-l-md border-r">
-                                <ChevronLeft className="h-4 w-4" />
-                            </Button>
-                            <div className="px-4 font-semibold text-sm w-[140px] text-center">
-                                {format(currentMonth, 'MMMM yyyy')}
-                            </div>
-                            <Button variant="ghost" size="icon" onClick={nextMonth} className="h-8 w-8 rounded-none rounded-r-md border-l">
-                                <ChevronRight className="h-4 w-4" />
-                            </Button>
-                        </div>
+                        {view === 'calendar' && (
+                            <>
+                                <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>Today</Button>
+                                <div className="flex items-center rounded-md border bg-background shadow-sm">
+                                    <Button variant="ghost" size="icon" onClick={prevMonth} className="h-8 w-8 rounded-none rounded-l-md border-r">
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    <div className="px-4 font-semibold text-sm w-[140px] text-center">
+                                        {format(currentMonth, 'MMMM yyyy')}
+                                    </div>
+                                    <Button variant="ghost" size="icon" onClick={nextMonth} className="h-8 w-8 rounded-none rounded-r-md border-l">
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </>
+                        )}
                         <Link href="/composer">
                             <Button size="sm" className="ml-2">
                                 <Plus className="h-4 w-4 mr-2" />
@@ -265,103 +300,154 @@ export default function CalendarView({ posts }: { posts: RawPost[] }) {
                     </div>
                 </PageHeader>
 
-                <div className="flex flex-col lg:flex-row gap-6 h-full overflow-hidden">
-                    {/* Calendar Grid */}
-                    <Card className="flex-1 flex flex-col h-full overflow-hidden shadow-sm border-muted">
-                        <CardHeader className="p-0 shrink-0">
-                            <div className="grid grid-cols-7 border-b bg-muted/30">
-                                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                                    <div key={day} className="py-2 text-center text-xs font-semibold text-muted-foreground">
-                                        {day}
-                                    </div>
-                                ))}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-0 flex-1 overflow-y-auto">
-                            <div className="grid grid-cols-7 auto-rows-fr min-h-full">
-                                {calendarDays.map((day) => {
-                                    const dayPosts = getPostsForDay(day);
-                                    const isSelected = isSameDay(day, selectedDate);
-                                    const isCurrentMonth = isSameMonth(day, currentMonth);
-
-                                    return (
-                                        <DroppableDay
-                                            key={day.toISOString()}
-                                            date={day}
-                                            isCurrentMonth={isCurrentMonth}
-                                            isSelected={isSelected}
-                                            isToday={isSameDay(day, today)}
-                                            onClick={() => setSelectedDate(day)}
-                                        >
-                                            {dayPosts.map(post => (
-                                                <DraggablePost
-                                                    key={post.id}
-                                                    post={post}
-                                                    onClick={(p) => setEditingPost(p)}
-                                                />
-                                            ))}
-                                            {/* Preview/More could stay similar */}
-                                        </DroppableDay>
-                                    );
-                                })}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Sidebar Details - can reuse logic or simplify */}
-                    <Card className="hidden lg:flex w-80 h-full shrink-0 flex-col shadow-sm border-muted">
-                        <CardHeader className="border-b shrink-0 py-4 px-6 bg-muted/10">
-                            <CardTitle className="text-base flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-muted-foreground" />
-                                {format(selectedDate, 'EEEE, MMM d')}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4 overflow-y-auto flex-1 space-y-4">
-                            {getPostsForDay(selectedDate).length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-[200px] text-center text-muted-foreground">
-                                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                                        <Clock className="h-6 w-6 opacity-20" />
-                                    </div>
-                                    <p className="text-sm font-medium">No posts scheduled</p>
-                                    <Button variant="link" size="sm" asChild className="mt-1 h-auto p-0 text-primary">
-                                        <Link href="/composer">Schedule a post</Link>
-                                    </Button>
+                {view === 'calendar' ? (
+                    <div className="flex flex-col lg:flex-row gap-6 h-full overflow-hidden">
+                        {/* Calendar Grid */}
+                        <Card className="flex-1 flex flex-col h-full overflow-hidden shadow-sm border-muted">
+                            <CardHeader className="p-0 shrink-0">
+                                <div className="grid grid-cols-7 border-b bg-muted/30">
+                                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                        <div key={day} className="py-2 text-center text-xs font-semibold text-muted-foreground">
+                                            {day}
+                                        </div>
+                                    ))}
                                 </div>
-                            ) : (
-                                getPostsForDay(selectedDate).map(post => (
-                                    <div key={post.id} onClick={() => setEditingPost(post)} className="group flex flex-col gap-3 p-3 rounded-lg border bg-card hover:bg-accent/40 hover:border-accent transition-all shadow-sm cursor-pointer">
-                                        <div className="flex items-center justify-between">
+                            </CardHeader>
+                            <CardContent className="p-0 flex-1 overflow-y-auto">
+                                <div className="grid grid-cols-7 auto-rows-fr min-h-full">
+                                    {calendarDays.map((day) => {
+                                        const dayPosts = getPostsForDay(day);
+                                        const isSelected = isSameDay(day, selectedDate);
+                                        const isCurrentMonth = isSameMonth(day, currentMonth);
+
+                                        return (
+                                            <DroppableDay
+                                                key={day.toISOString()}
+                                                date={day}
+                                                isCurrentMonth={isCurrentMonth}
+                                                isSelected={isSelected}
+                                                isTodayDay={isToday(day)}
+                                                onClick={() => setSelectedDate(day)}
+                                            >
+                                                {dayPosts.map(post => (
+                                                    <DraggablePost
+                                                        key={post.id}
+                                                        post={post}
+                                                        onClick={(p) => setEditingPost(p)}
+                                                    />
+                                                ))}
+                                            </DroppableDay>
+                                        );
+                                    })}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Sidebar */}
+                        <Card className="hidden lg:flex w-80 h-full shrink-0 flex-col shadow-sm border-muted">
+                            <CardHeader className="border-b shrink-0 py-4 px-6 bg-muted/10">
+                                <CardTitle className="text-base flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-muted-foreground" />
+                                    {format(selectedDate, 'EEEE, MMM d')}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 overflow-y-auto flex-1 space-y-4">
+                                {getPostsForDay(selectedDate).length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-[200px] text-center text-muted-foreground">
+                                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                                            <Clock className="h-6 w-6 opacity-20" />
+                                        </div>
+                                        <p className="text-sm font-medium">No posts scheduled</p>
+                                        <Button variant="link" size="sm" asChild className="mt-1 h-auto p-0 text-primary">
+                                            <Link href="/composer">Schedule a post</Link>
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    getPostsForDay(selectedDate).map(post => (
+                                        <div key={post.id} onClick={() => setEditingPost(post)} className="group flex flex-col gap-3 p-3 rounded-lg border bg-card hover:bg-accent/40 hover:border-accent transition-all shadow-sm cursor-pointer">
+                                            <div className="flex items-center justify-between">
+                                                <Badge
+                                                    variant="secondary"
+                                                    className={cn(
+                                                        "px-2 py-0.5 h-6 text-[10px] uppercase tracking-wider font-semibold border",
+                                                        post.status === 'published' ? "bg-green-100 text-green-700 border-green-200" :
+                                                            post.status === 'failed' ? "bg-red-100 text-red-700 border-red-200" :
+                                                                "bg-blue-50 text-blue-700 border-blue-100"
+                                                    )}
+                                                >
+                                                    {post.status}
+                                                </Badge>
+                                                <span className="text-xs text-muted-foreground font-mono">
+                                                    {format(post.scheduledAt, 'h:mm a')}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm line-clamp-3 leading-relaxed">
+                                                {post.content || <span className="italic text-muted-foreground">No text content</span>}
+                                            </p>
+                                            <div className="flex flex-wrap gap-2 pt-2 border-t mt-1">
+                                                {post.destinations.map((dest: any, i: number) => (
+                                                    <div key={i} className="flex items-center gap-1.5 px-2 py-1 rounded bg-muted/50 border text-[10px] font-medium">
+                                                        {dest.socialAccount?.platform}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                ) : (
+                    <Card className="flex-1 overflow-hidden shadow-sm border-muted">
+                        <CardContent className="p-0 h-full overflow-y-auto">
+                            <div className="w-full text-sm">
+                                <div className="grid grid-cols-12 bg-muted/50 border-b p-3 font-medium text-muted-foreground">
+                                    <div className="col-span-5">Content</div>
+                                    <div className="col-span-2">Scheduled</div>
+                                    <div className="col-span-2">Status</div>
+                                    <div className="col-span-2">Platforms</div>
+                                    <div className="col-span-1 text-right">Actions</div>
+                                </div>
+                                {filteredPosts.sort((a, b) => b.scheduledAt.getTime() - a.scheduledAt.getTime()).map(post => (
+                                    <div key={post.id} className="grid grid-cols-12 border-b p-3 items-center hover:bg-muted/5">
+                                        <div className="col-span-5 pr-4 truncate">
+                                            {post.content || <span className="text-muted-foreground italic">No content (Media only)</span>}
+                                        </div>
+                                        <div className="col-span-2 text-muted-foreground">
+                                            {format(post.scheduledAt, 'MMM d, yyyy h:mm a')}
+                                        </div>
+                                        <div className="col-span-2">
                                             <Badge
                                                 variant="secondary"
                                                 className={cn(
-                                                    "px-2 py-0.5 h-6 text-[10px] uppercase tracking-wider font-semibold border",
-                                                    post.status === 'published' ? "bg-green-100 text-green-700 border-green-200" :
-                                                        post.status === 'failed' ? "bg-red-100 text-red-700 border-red-200" :
-                                                            "bg-blue-50 text-blue-700 border-blue-100"
+                                                    "text-[10px] uppercase font-bold",
+                                                    post.status === 'published' ? "bg-green-100 text-green-700" :
+                                                        post.status === 'failed' ? "bg-red-100 text-red-700" :
+                                                            "bg-blue-50 text-blue-700"
                                                 )}
                                             >
                                                 {post.status}
                                             </Badge>
-                                            <span className="text-xs text-muted-foreground font-mono">
-                                                {format(post.scheduledAt, 'h:mm a')}
-                                            </span>
                                         </div>
-                                        <p className="text-sm line-clamp-3 leading-relaxed">
-                                            {post.content || <span className="italic text-muted-foreground">No text content</span>}
-                                        </p>
-                                        <div className="flex flex-wrap gap-2 pt-2 border-t mt-1">
-                                            {post.destinations.map((dest: any, i: number) => (
-                                                <div key={i} className="flex items-center gap-1.5 px-2 py-1 rounded bg-muted/50 border text-[10px] font-medium">
-                                                    {dest.socialAccount?.platform}
-                                                </div>
+                                        <div className="col-span-2 flex gap-1 flex-wrap">
+                                            {post.destinations.map((d: any, i) => (
+                                                <span key={i} className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">
+                                                    {d.socialAccount.platform.slice(0, 2)}
+                                                </span>
                                             ))}
                                         </div>
+                                        <div className="col-span-1 text-right">
+                                            <Button variant="ghost" size="sm" onClick={() => setEditingPost(post)}>Edit</Button>
+                                        </div>
                                     </div>
-                                ))
-                            )}
+                                ))}
+                                {filteredPosts.length === 0 && (
+                                    <div className="p-10 text-center text-muted-foreground">No posts found for this filter</div>
+                                )}
+                            </div>
                         </CardContent>
                     </Card>
-                </div>
+                )}
 
                 <DragOverlay>
                     {activePost ? (

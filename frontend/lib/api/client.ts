@@ -1,46 +1,50 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { toast } from "@/hooks/use-toast";
 
-if (!API_BASE_URL) {
-    console.warn("NEXT_PUBLIC_API_BASE_URL is not defined!");
-}
+const API_BASE_URL = "/api";
 
 interface RequestOptions extends RequestInit {
     params?: Record<string, string>;
+    skipErrorToast?: boolean;
+    successMessage?: string;
 }
 
-export interface ApiError {
-    success: false;
-    statusCode: number;
-    message: string;
-    details?: any;
-}
-
-class ApiClientError extends Error {
-    public statusCode: number;
-    public details?: any;
-
-    constructor(message: string, statusCode: number, details?: any) {
+export class ApiClientError extends Error {
+    constructor(
+        message: string,
+        public statusCode: number,
+        public details?: any
+    ) {
         super(message);
         this.name = "ApiClientError";
-        this.statusCode = statusCode;
-        this.details = details;
     }
 }
 
+/**
+ * Centralized API client for Autopostr.
+ * - Automatically attaches credentials (cookies)
+ * - Normalizes errors to human-friendly messages
+ * - Handles Success/Error toasts
+ * - Returns typed responses
+ */
 export const apiClient = async <T>(
     endpoint: string,
-    { params, ...options }: RequestOptions = {}
+    { params, skipErrorToast = false, successMessage, ...options }: RequestOptions = {}
 ): Promise<T> => {
-    const url = new URL(`${API_BASE_URL}${endpoint}`);
+    // Normalize endpoint to ensure it points to /api/*
+    const cleanEndpoint = endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
+    const url = new URL(`${API_BASE_URL}/${cleanEndpoint}`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
 
     if (params) {
         Object.entries(params).forEach(([key, value]) => {
-            url.searchParams.append(key, value);
+            if (value !== undefined && value !== null) {
+                url.searchParams.append(key, value);
+            }
         });
     }
 
     try {
         const response = await fetch(url.toString(), {
+            credentials: "include", // Ensure session cookies are sent
             headers: {
                 "Content-Type": "application/json",
                 ...options.headers,
@@ -49,46 +53,70 @@ export const apiClient = async <T>(
         });
 
         if (!response.ok) {
-            let errorData: ApiError;
+            let errorMessage = "Something went wrong";
+            let statusCode = response.status;
+            let details = null;
+
             try {
-                errorData = await response.json();
+                const errorData = await response.json();
+                // Prioritize 'message' or 'error' fields
+                if (errorData.message) errorMessage = errorData.message;
+                else if (errorData.error) errorMessage = typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error);
+
+                details = errorData;
             } catch (e) {
-                // Fallback if JSON parsing fails
-                throw new ApiClientError(
-                    `Request failed with status ${response.status}`,
-                    response.status
-                );
+                // JSON parsing failed, rely on status code
             }
 
-            // Handle 401 specifically
-            if (response.status === 401) {
-                console.error("Unauthorized access. Redirecting to login...");
-                // In a real app, trigger logout or redirect
-                if (typeof window !== 'undefined') {
-                    window.location.href = '/login';
-                }
+            // Strict Error Normalization
+            if (statusCode === 401) {
+                errorMessage = "Authentication expired. Please login again.";
+            } else if (statusCode === 403) {
+                errorMessage = "You do not have permission to perform this action.";
+            } else if (statusCode === 404) {
+                errorMessage = "Resource not found.";
+            } else if (statusCode >= 500) {
+                errorMessage = "Internal server error. Please try again later.";
+            } else if (errorMessage === "Failed to fetch") {
+                errorMessage = "Failed to connect to the server.";
             }
 
-            throw new ApiClientError(
-                errorData.message || "An unknown error occurred",
-                response.status,
-                errorData.details
-            );
+            throw new ApiClientError(errorMessage, statusCode, details);
         }
 
-        // Assume standardized success response: { success: true, data: T }
-        // If backend returns raw data, adjust here.
+        // Handle Success Toast
+        if (successMessage) {
+            toast({
+                variant: "success", // Uses the new green variant
+                title: "Success",
+                description: successMessage,
+            } as any);
+        }
+
+        // Normalize Response Data
+        // Expects standard { data: ... } or raw JSON
         const responseData = await response.json();
-        return responseData.data || responseData;
+        return (responseData.data !== undefined ? responseData.data : responseData) as T;
 
-    } catch (error) {
-        if (error instanceof ApiClientError) {
-            throw error;
+    } catch (error: any) {
+        // Final normalization for network errors or unexpected throws
+        let message = error.message || "An unexpected error occurred.";
+
+        if (message === "Failed to fetch" || message.includes("NetworkError") || message.includes("connection refused")) {
+            message = "Network connection failed. Please check your internet.";
         }
-        // Handle network errors
-        throw new ApiClientError(
-            error instanceof Error ? error.message : "Network Error",
-            0
-        );
+
+        // Handle Error Toast
+        if (!skipErrorToast) {
+            // Prevent duplicate toasts if called rapidly? (Toast hook handles limit=1 usually)
+            toast({
+                variant: "destructive", // Red toast
+                title: "Error",
+                description: message,
+            });
+        }
+
+        // Re-throw to allow component-level loading state updates
+        throw error;
     }
 };

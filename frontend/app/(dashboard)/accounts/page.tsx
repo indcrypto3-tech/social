@@ -5,13 +5,11 @@
 import { Button } from "@/components/ui/button";
 import {
     Card,
-    CardDescription,
     CardHeader,
-    CardTitle,
     CardContent,
     CardFooter
 } from "@/components/ui/card";
-import { Plus, Facebook, Instagram, Linkedin, Twitter, Youtube, Video, CheckCircle, AlertCircle, RefreshCw, XCircle } from "lucide-react";
+import { Plus, Facebook, Instagram, Linkedin, Twitter, Youtube, Video, RefreshCw, Trash2 } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -20,15 +18,25 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { PageHeader } from "../components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { Provider } from "@supabase/supabase-js";
 import { useSearchParams } from "next/navigation";
-import React, { useEffect, Suspense } from "react";
+import React, { useEffect, Suspense, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { apiClient } from "@/lib/api/client";
 
 // Platform configurations
 const platforms = [
@@ -51,7 +59,7 @@ function AccountStatusListener() {
         if (error) {
             toast({
                 variant: "destructive",
-                title: "Connection Error",
+                title: "Connection Failed",
                 description: error,
             });
             window.history.replaceState({}, '', '/dashboard/accounts');
@@ -62,6 +70,7 @@ function AccountStatusListener() {
             const limited = searchParams.get("limited");
 
             toast({
+                variant: "success",
                 title: "Account Connected",
                 description: platform === 'twitter' && limited === 'true'
                     ? "X (Twitter) connected successfully! (Limited functionality on Free Plan)"
@@ -90,21 +99,18 @@ export default function AccountsPage() {
     const [connectedAccounts, setConnectedAccounts] = React.useState<ConnectedAccount[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [isConnectDialogOpen, setIsConnectDialogOpen] = React.useState(false);
+    const [disconnectAccount, setDisconnectAccount] = React.useState<ConnectedAccount | null>(null);
+
     const supabase = createClient();
     const { toast } = useToast();
 
     const fetchAccounts = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/accounts');
-            if (response.ok) {
-                const data = await response.json();
-                setConnectedAccounts(data);
-            } else {
-                console.error("Failed to fetch accounts");
-            }
+            const data = await apiClient<ConnectedAccount[]>('/accounts');
+            setConnectedAccounts(data);
         } catch (error) {
-            console.error("Failed to fetch accounts:", error);
+            // Error handling managed by apiClient (toast)
         } finally {
             setLoading(false);
         }
@@ -119,33 +125,31 @@ export default function AccountsPage() {
             try {
                 const { data: { session }, error: sessionError } = await supabase.auth.getSession();
                 if (sessionError || !session) {
-                    alert("Please log in to connect accounts.");
+                    toast({
+                        variant: "destructive",
+                        title: "Authentication Required",
+                        description: "Please log in to connect accounts.",
+                    });
                     return;
                 }
 
                 const targetProvider = platformId === 'instagram' ? 'facebook' : platformId;
-                const response = await fetch(`/api/oauth/${targetProvider}/start`, {
+
+                const data = await apiClient<{ url: string }>(`/oauth/${targetProvider}/start`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    skipErrorToast: true, // Handle custom error here if needed
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || `Failed to start ${targetProvider} OAuth`);
-                }
-
-                const data = await response.json();
                 if (data.url) {
                     window.location.href = data.url;
                 } else {
                     throw new Error("No redirect URL returned");
                 }
             } catch (err: any) {
-                console.error(`${platformId} Connect Error:`, err);
                 toast({
                     variant: "destructive",
-                    title: "Connection Failed",
-                    description: err.message,
+                    title: "Account connection failed",
+                    description: err.message || "Could not start OAuth flow",
                 });
             }
             return;
@@ -156,25 +160,24 @@ export default function AccountsPage() {
         });
     };
 
-    const handleDisconnect = async (accountId: string) => {
-        if (!confirm("Are you sure you want to disconnect this account?")) return;
+    const confirmDisconnect = async () => {
+        if (!disconnectAccount) return;
 
         try {
-            const response = await fetch(`/api/accounts?id=${accountId}`, { method: 'DELETE' });
-            if (!response.ok) throw new Error("Failed to disconnect");
+            await apiClient(`/accounts/${disconnectAccount.id}`, {
+                method: 'DELETE',
+                successMessage: "Account disconnected successfully."
+            });
 
-            setConnectedAccounts(prev => prev.filter(acc => acc.id !== accountId));
-            toast({
-                title: "Account Disconnected",
-                description: "The account has been successfully disconnected.",
-            });
+            setConnectedAccounts(prev => prev.filter(acc => acc.id !== disconnectAccount.id));
         } catch (err) {
-            console.error("Disconnect error:", err);
             toast({
-                variant: "destructive",
-                title: "Error",
-                description: "Failed to disconnect account",
+                variant: 'destructive',
+                title: "Disconnect Failed",
+                description: "Could not remove account."
             });
+        } finally {
+            setDisconnectAccount(null);
         }
     };
 
@@ -290,7 +293,7 @@ export default function AccountsPage() {
                                                 variant="ghost"
                                                 size="sm"
                                                 className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                                onClick={() => handleDisconnect(account.id)}
+                                                onClick={() => setDisconnectAccount(account)}
                                             >
                                                 Disconnect
                                             </Button>
@@ -302,6 +305,24 @@ export default function AccountsPage() {
                     ))}
                 </div>
             )}
+
+            <AlertDialog open={!!disconnectAccount} onOpenChange={(open) => !open && setDisconnectAccount(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will disconnect <b>{disconnectAccount?.accountName}</b>. You will need to reconnect it to publish posts.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDisconnect} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Disconnect
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
+

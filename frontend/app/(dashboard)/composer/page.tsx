@@ -21,13 +21,16 @@ import {
     Instagram,
     Linkedin,
     Twitter,
-    Youtube
+    Youtube,
+    FileText,
+    Zap,
+    Trash2
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { createPost, getAccounts } from "./actions";
+import { createPost, getAccounts, postNow } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 import {
     Select,
@@ -40,6 +43,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { PageHeader } from "../components/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { MediaPicker, MediaItem } from "@/components/media/media-picker-dialog";
+import Image from "next/image";
 
 type Account = {
     id: string;
@@ -68,12 +73,12 @@ const platformColors: Record<string, string> = {
 import { AIToolbar } from "./components/ai-toolbar";
 
 export default function ComposerPage() {
-    const [date, setDate] = useState<Date | undefined>(new Date());
+    const [date, setDate] = useState<Date | undefined>();
     const [time, setTime] = useState("12:00");
     const [content, setContent] = useState("");
-    // Removed isGenerating and handleSmartGenerate
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+    const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
 
@@ -82,10 +87,34 @@ export default function ComposerPage() {
         getAccounts().then(setAccounts);
     }, []);
 
+    const handleMediaSelect = (items: MediaItem[]) => {
+        setSelectedMedia(prev => {
+            // Combine and dedup
+            const combined = [...prev, ...items];
+            const unique = combined.filter((item, index, self) =>
+                index === self.findIndex((t) => t.id === item.id)
+            );
+            return unique;
+        });
+    };
 
-    const handleSubmit = async () => {
+    const removeMedia = (id: string) => {
+        setSelectedMedia(prev => prev.filter(m => m.id !== id));
+    };
+
+    const handleSubmit = async (action: 'schedule' | 'draft' | 'now') => {
         if (selectedAccounts.length === 0) {
-            toast({ title: "Error", description: "Please select at least one account", variant: "destructive" });
+            toast({ title: "Validation Error", description: "Please select at least one account", variant: "destructive" });
+            return;
+        }
+
+        if (!content.trim() && selectedMedia.length === 0) {
+            toast({ title: "Validation Error", description: "Post content or media is required.", variant: "destructive" });
+            return;
+        }
+
+        if (action === 'schedule' && !date) {
+            toast({ title: "Date required", description: "Please select a date for scheduling.", variant: "destructive" });
             return;
         }
 
@@ -93,9 +122,9 @@ export default function ComposerPage() {
         const formData = new FormData();
         formData.append('content', content);
         selectedAccounts.forEach(id => formData.append('accounts', id));
+        selectedMedia.forEach(m => formData.append('mediaUrls', m.url));
 
-        if (date) {
-            // Combine date and time
+        if (action === 'schedule' && date) {
             const [hours, minutes] = time.split(':').map(Number);
             const scheduledDate = new Date(date);
             scheduledDate.setHours(hours);
@@ -104,14 +133,25 @@ export default function ComposerPage() {
         }
 
         try {
-            await createPost(formData);
-            toast({ title: "Success", description: "Post scheduled successfully!" });
+            const post = await createPost(formData) as { id: string };
+
+            if (action === 'now') {
+                // Trigger post now
+                await postNow(post.id);
+                toast({ variant: 'success', title: "Post Created", description: "Your post is being published now." });
+            } else if (action === 'draft') {
+                toast({ variant: 'success', title: "Draft Saved", description: "Your post has been saved as a draft." });
+            } else {
+                toast({ variant: 'success', title: "Post Scheduled", description: "Your post has been scheduled successfully." });
+            }
+
             // Reset form
             setContent("");
             setSelectedAccounts([]);
-            setDate(new Date());
+            setSelectedMedia([]);
+            setDate(undefined);
         } catch (error: any) {
-            toast({ title: "Error", description: error.message, variant: "destructive" });
+            toast({ title: "Failed to create post", description: error.message, variant: "destructive" });
         } finally {
             setIsSubmitting(false);
         }
@@ -173,16 +213,7 @@ export default function ComposerPage() {
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
                                     <Italic className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                                    <LinkIcon className="h-4 w-4" />
-                                </Button>
                                 <Separator orientation="vertical" className="h-6 mx-1" />
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                                    <Smile className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                                    <Hash className="h-4 w-4" />
-                                </Button>
                                 <div className="ml-auto">
                                     <AIToolbar
                                         currentContent={content}
@@ -192,11 +223,41 @@ export default function ComposerPage() {
                             </div>
 
                             <Textarea
-                                placeholder="What's on your mind?"
+                                placeholder="What's on your mind? (Use A.I. to help you write!)"
                                 className="flex-1 min-h-[150px] text-lg border-none focus-visible:ring-0 resize-none p-6 shadow-none leading-relaxed bg-transparent"
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
                             />
+
+                            {/* Media Preview Grid */}
+                            {selectedMedia.length > 0 && (
+                                <div className="px-6 pb-4">
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {selectedMedia.map(item => (
+                                            <div key={item.id} className="relative aspect-square rounded-md overflow-hidden bg-muted group">
+                                                {item.fileType?.startsWith('video') ? (
+                                                    <video src={item.url} className="object-cover w-full h-full" />
+                                                ) : (
+                                                    <Image src={item.url} alt="media" fill className="object-cover" />
+                                                )}
+                                                <Button
+                                                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    size="icon"
+                                                    variant="destructive"
+                                                    onClick={() => removeMedia(item.id)}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                        <MediaPicker onSelect={handleMediaSelect} trigger={
+                                            <div className="aspect-square rounded-md border border-dashed flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
+                                                <span className="text-xs text-muted-foreground">+ Add</span>
+                                            </div>
+                                        } />
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="flex justify-between items-center px-4 pb-2">
                                 <span className={cn("text-xs", content.length > 280 ? "text-red-500 font-bold" : "text-muted-foreground")}>
@@ -204,15 +265,22 @@ export default function ComposerPage() {
                                 </span>
                             </div>
 
-                            <div className="p-4 border-t bg-muted/5">
-                                <div className="border border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 hover:border-primary/50 transition-all cursor-pointer group">
-                                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                                        <ImageIcon className="h-5 w-5 text-muted-foreground/70" />
-                                    </div>
-                                    <span className="text-sm font-medium">Add Photos or Video</span>
-                                    <span className="text-xs opacity-70">Drag and drop or click to upload</span>
+                            {selectedMedia.length === 0 && (
+                                <div className="p-4 border-t bg-muted/5">
+                                    <MediaPicker
+                                        onSelect={handleMediaSelect}
+                                        trigger={
+                                            <div className="border border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 hover:border-primary/50 transition-all cursor-pointer group w-full">
+                                                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                                                    <ImageIcon className="h-5 w-5 text-muted-foreground/70" />
+                                                </div>
+                                                <span className="text-sm font-medium">Add Photos or Video</span>
+                                                <span className="text-xs opacity-70">Browse Library or Upload</span>
+                                            </div>
+                                        }
+                                    />
                                 </div>
-                            </div>
+                            )}
                         </CardContent>
 
                         {/* Scheduling Toolbar */}
@@ -224,6 +292,7 @@ export default function ComposerPage() {
                                             <Button variant="ghost" size="sm" className={cn("h-auto p-0 hover:bg-transparent justify-start text-left font-normal", !date && "text-muted-foreground")}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                                 {date ? format(date, "MMM d, yyyy") : <span>Pick a date</span>}
+                                                {date && <X className="ml-2 h-3 w-3 hover:text-destructive cursor-pointer" onClick={(e) => { e.stopPropagation(); setDate(undefined); }} />}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
@@ -251,20 +320,34 @@ export default function ComposerPage() {
                                     </Select>
                                 </div>
                             </div>
-                            <div className="flex flex-col items-end gap-1">
+                            <div className="flex items-center gap-2">
                                 <Button
-                                    onClick={handleSubmit}
-                                    disabled={isSubmitting || accounts.length === 0}
-                                    size="lg"
-                                    className="px-8 shadow-md"
+                                    variant="outline"
+                                    disabled={isSubmitting}
+                                    onClick={() => handleSubmit('draft')}
                                 >
-                                    <Send className="mr-2 h-4 w-4" />
-                                    {isSubmitting ? 'Scheduling...' : 'Schedule Post'}
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    Save Draft
                                 </Button>
-                                {accounts.length === 0 && (
-                                    <span className="text-[10px] text-red-500">
-                                        Connect an account to post
-                                    </span>
+
+                                {date ? (
+                                    <Button
+                                        onClick={() => handleSubmit('schedule')}
+                                        disabled={isSubmitting || accounts.length === 0}
+                                        className="shadow-md"
+                                    >
+                                        <Send className="mr-2 h-4 w-4" />
+                                        {isSubmitting ? 'Scheduling...' : 'Schedule'}
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        onClick={() => handleSubmit('now')}
+                                        disabled={isSubmitting || accounts.length === 0}
+                                        className="bg-green-600 hover:bg-green-700 text-white shadow-md"
+                                    >
+                                        <Zap className="mr-2 h-4 w-4" />
+                                        {isSubmitting ? 'Posting...' : 'Post Now'}
+                                    </Button>
                                 )}
                             </div>
                         </div>
@@ -307,9 +390,22 @@ export default function ComposerPage() {
                                             <div className="p-4 text-sm whitespace-pre-wrap leading-relaxed">
                                                 {content || <span className="text-muted-foreground italic">Your caption here...</span>}
                                             </div>
-                                            <div className="h-48 bg-muted mx-4 mb-4 rounded-lg border flex items-center justify-center text-xs text-muted-foreground">
-                                                Image / Video Preview
-                                            </div>
+                                            {selectedMedia.length > 0 && (
+                                                <div className="bg-muted border-t">
+                                                    {selectedMedia[0].fileType?.startsWith('video') ? (
+                                                        <video src={selectedMedia[0].url} className="w-full h-auto" controls />
+                                                    ) : (
+                                                        <div className="relative aspect-video">
+                                                            <Image src={selectedMedia[0].url} alt="media" fill className="object-cover" />
+                                                            {selectedMedia.length > 1 && (
+                                                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold text-xl">
+                                                                    +{selectedMedia.length - 1}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     )
                                 })

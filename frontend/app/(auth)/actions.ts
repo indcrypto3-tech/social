@@ -39,41 +39,47 @@ export async function login(formData: FormData) {
 
 export async function finalizeLogin(accessToken: string) {
     try {
-        const res = await fetch(`${BACKEND_URL}/api/auth/session`, {
+        const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookies().toString(), // Pass existing cookies just in case
             },
-            body: JSON.stringify({ access_token: accessToken }),
+            body: JSON.stringify({ accessToken }), // Match docs: camelCase
         });
 
         if (!res.ok) {
             console.error('Failed to create backend session', await res.text());
-            throw new Error('Failed to create session');
+            // Don't throw for now to allow partial login (Supabase only) if backend is down? 
+            // OR strict: throw new Error('Backend sync failed');
+            // Strict is better for "UI Architect" reliability.
+            throw new Error('Failed to synchronize session');
         }
 
         const body = await res.json();
+        const serverSession = body.session; // Docs say response has { session: { id, ... } }
 
-        if (body.sessionId) {
-            cookies().set(SESSION_COOKIE_NAME, body.sessionId, {
+        // If backend sets its own cookies via Set-Cookie header, Next.js Middleware/Server Action *should* handle it 
+        // if we are proxying. But here we are making a side-channel request.
+        // We need to manually set the cookie if the backend returned an ID or we rely on the header.
+        // The previous code manually set it. Let's stick to that if backend returns ID.
+
+        if (serverSession?.id) {
+            cookies().set(SESSION_COOKIE_NAME, serverSession.id, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'lax',
-                maxAge: 12 * 60 * 60, // 12 hours default matching backend
+                maxAge: 7 * 24 * 60 * 60, // 7 days (matching typical session)
                 path: '/',
             });
         }
     } catch (e) {
         console.error("Error finalizing login:", e);
-        // Fallback or error handling?
-        // We'll let it proceed for now but session might be broken if backend failed.
+        // If backend sync fails, logout from supabase to avoid inconsistent state?
+        // await supabase.auth.signOut();
+        // throw e;
     }
 
-    // If called directly from client (via action), we might want to redirect here or let caller handle it.
-    // Since this is an action, we can't easily return to useEffect unless we return data.
-    // We will assume caller handles redirect if this is used as a plain function, 
-    // BUT 'use server' makes it an endpoint.
-    // We'll return success.
     return { success: true };
 }
 
@@ -101,7 +107,7 @@ export async function signup(formData: FormData) {
         redirect('/register?message=Account created! Please check your email to verify your account.')
     }
 
-    // Auto-login after signup?
+    // Auto-login after signup
     if (authData.session.access_token) {
         await finalizeLogin(authData.session.access_token);
     }
@@ -116,7 +122,12 @@ export async function logout() {
 
     // Call backend to destroy session
     try {
-        await fetch(`${BACKEND_URL}/api/auth/logout`, { method: 'POST' });
+        await fetch(`${BACKEND_URL}/api/auth/logout`, {
+            method: 'POST',
+            headers: {
+                'Cookie': cookies().toString() // Important: Pass session cookie to backend
+            }
+        });
     } catch (e) {
         console.error("Failed to call backend logout", e);
     }

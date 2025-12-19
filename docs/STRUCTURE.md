@@ -16,9 +16,11 @@ This document defines the current structure of the **Autopostr** (formerly Socia
 *   **`frontend/app/`**: Main application routes.
     *   `(auth)/`: Login/Register pages.
     *   `(dashboard)/`: Protected application pages (Dashboard, Calendar, Settings).
+    *   `(marketing)/`: Public landing pages.
+    *   `auth/`: OAuth Callback handlers.
 *   **`frontend/components/`**: UI Components (Shadcn & Custom).
 *   **`frontend/hooks/`**: Custom React hooks.
-*   **`frontend/lib/`**:
+*   `frontend/lib/`:
     *   `api/`: **Crucial**. Contains the HTTP client (`client.ts`) that communicates with the Backend API.
     *   `utils.ts`: Utility functions (Tailwind merger, etc.).
 *   **`frontend/public/`**: Static assets (images, branding).
@@ -32,10 +34,15 @@ This document defines the current structure of the **Autopostr** (formerly Socia
 
 ### Key Directories
 *   **`backend/app/api/`**: **The Core API**.
-    *   `accounts/`, `posts/`, `media/`, `oauth/`: Feature-specific endpoints.
+    *   `accounts/`, `posts/`, `media/`: Feature-specific endpoints.
+    *   `oauth/`: Backend-owned OAuth flows.
+        *   `[provider]/start`: Initiates OAuth.
+        *   `[provider]/callback`: Handles callbacks.
 *   **`backend/lib/`**: Shared logic.
     *   `db/`: Drizzle Client and Schema definitions (`schema.ts`).
     *   `posting/`: Logic for dispatching posts to social networks.
+    *   `oauth/`: OAuth Provider implementations (Facebook, LinkedIn, Twitter, etc.).
+    *   `social/`: Platform-specific utilities.
 *   **`backend/drizzle/`**: Database migrations and schema snapshots.
 *   **`backend/worker/`**: Background workers (BullMQ) for processing scheduled posts.
 *   **`backend/middleware/`**: Custom middleware for error handling and authentication verification.
@@ -70,7 +77,9 @@ Contains all project documentation, including architecture diagrams, API specs, 
 
 ### Authentication
 *   Auth is handled by Supabase (Email/Password).
-*   **Social OAuth**: Managed by Backend (BFF pattern) via `backend/app/api/oauth`.
+*   **Social OAuth**: Managed by Backend (BFF pattern).
+    *   Frontend redirects to `backend/app/api/oauth/[provider]/start`.
+    *   Backend handles handshake and redirects back to Frontend.
 *   **Connected Accounts**: Stored in `social_accounts`. Status (connected/expired) is computed at runtime. Disconnecting performs a soft-delete (`is_active = false`).
 *   Frontend manages the session.
 *   Frontend passes the Access Token in the `Authorization` header to the Backend.

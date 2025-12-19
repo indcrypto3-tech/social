@@ -27,7 +27,12 @@ console.log('Starting Worker...');
 const notifWorker = startNotificationWorker();
 
 // Start Health Check Server
+// Start Health Check Server
 startHealthServer(3001);
+
+import { startSessionCleanupWorker } from '../jobs/session-cleanup.job';
+startSessionCleanupWorker(connection);
+
 
 // Schedule Weekly Digests (Idempotent run)
 async function scheduleDigests() {

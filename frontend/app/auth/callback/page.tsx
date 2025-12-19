@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { finalizeLogin } from '../../(auth)/actions'
 
 function AuthCallbackContent() {
     const router = useRouter()
@@ -42,17 +43,10 @@ function AuthCallbackContent() {
                     throw new Error('No session established')
                 }
 
-                // If this was a Twitter OAuth login, we need to sync with backend
-                // Supabase returns provider tokens in the session for the *initial* login
-                // We access them from session.provider_token / session.provider_refresh_token
-                // OR from user_metadata if we want profile info.
-
-                // Note: supabase-js types might not explicitly show provider_token on Session, 
-                // but it is often present or we should check `session.user.app_metadata.provider` or similar? 
-                // Actually `session.provider_token` is the standard place for OAuth 1.0/2.0 tokens immediately after flow.
-
-                // (Legacy Supabase OAuth logic removed: Twitter/Social syncing is now handled via backend-driven flow)
-
+                // Finalize Login with Backend Session
+                if (session.access_token) {
+                    await finalizeLogin(session.access_token);
+                }
 
                 router.replace(next)
 

@@ -30,6 +30,46 @@ This document provides a comprehensive reference for the backend API endpoints.
 
 ---
 
+## Authentication
+
+### Login (Email/Password)
+- **Endpoint:** `POST /api/auth/login`
+- **Description:** Authenticates user with Supabase and establishes a backend session.
+- **Request Body:**
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "securepassword"
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "success": true,
+    "user": { "id": "uuid", "email": "..." },
+    "sessionId": "uuid-session-id"
+  }
+  ```
+- **Cookies:** Sets a `session_id` HttpOnly cookie.
+
+### Login (OAuth Session Upgrade)
+- **Endpoint:** `POST /api/auth/session`
+- **Description:** Creates a backend session from a valid Supabase OAuth access token.
+- **Request Body:**
+  ```json
+  {
+    "access_token": "supabase.jwt.token"
+  }
+  ```
+- **Response:** Same as Login.
+
+### Logout
+- **Endpoint:** `POST /api/auth/logout`
+- **Description:** Invalidates the current session and clears the cookie.
+- **Response:** `{ "success": true }`
+
+---
+
 ## 1. Posts & Scheduling
 
 ### Get All Scheduled Posts
@@ -95,19 +135,6 @@ This document provides a comprehensive reference for the backend API endpoints.
 - **Description:** Lists all active social media accounts connected by the user. Returns normalized data across platforms.
 - **Response:**
   ```json
-  {
-    "success": true, // Note: Next.js API routes often return array directly if not wrapped, but documented wrapper here. 
-                     // My implementation returned keys directly. I should stick to my implementation in route.ts which returns Array directly. 
-                     // Wait, my route.ts returns `NextResponse.json(normalizedAccounts)`. It is an ARRAY.
-                     // The doc says { success: true, data: [...] }.
-                     // I should probably fix my route to match the doc OR update the doc to match the route.
-                     // Given "Response Format" section at top says Standard success response, I *should* have wrapped it.
-                     // However, for this task I will document what I implemented (Array) or better yet, I should have wrapped it. 
-                     // Re-reading route.ts: `return NextResponse.json(normalizedAccounts);` -> Array.
-                     // I will update the doc to show Array for now to be accurate to code, OR I can quickly update the code to wrap it.
-                     // The user asked to "Update API Documentation". 
-                     // I will update the documentation to match the ACTUAL code (Array).
-  }
   [
     {
       "id": "uuid-1",
@@ -133,6 +160,18 @@ This document provides a comprehensive reference for the backend API endpoints.
     "success": true
   }
   ```
+
+### Initiate OAuth Connection
+- **Endpoint:** `GET /oauth/[provider]/start`
+- **Description:** Initiates the OAuth flow by redirecting the user to the social platform.
+- **Parameters:**
+  - `provider` (path param): One of `twitter`, `facebook`, `linkedin`.
+- **Response:** `302 Redirect` to the provider's authorization page.
+
+### OAuth Callback
+- **Endpoint:** `GET /oauth/[provider]/callback`
+- **Description:** Handles the redirect from the provider, exchanges the code for tokens, creates/updates the `social_accounts` record, and redirects back to the frontend.
+- **Response:** `302 Redirect` to the frontend `(dashboard)/connections` page (or error page).
 
 ---
 

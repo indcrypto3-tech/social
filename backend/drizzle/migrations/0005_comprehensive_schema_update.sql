@@ -1,3 +1,10 @@
+-- Safe Enum Creation
+DO $$ BEGIN
+    CREATE TYPE approval_status AS ENUM ('pending', 'approved', 'rejected', 'none');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
 -- 1. Scheduling & Execution
 CREATE TABLE IF NOT EXISTS "post_executions" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),

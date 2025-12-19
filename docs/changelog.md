@@ -7,6 +7,8 @@ All notable changes to the Autopostr project will be documented in this file.
 ## [1.0.0] - 2025-12-19
 
 ### Added
+- **Connected Accounts**: Full management UI and API. Users can view, group, and disconnect accounts.
+- **Account Status**: Runtime evaluation of token expiry and connection status.
 - **OAuth Architecture**: Implemented Backend-for-Frontend (BFF) pattern for social OAuth.
 - **X (Twitter) Integration**: Added secure, backend-managed OAuth flow for X.
 - **X Free Plan Support**: Optimized OAuth scopes to work with X Developer Free Plan (removed `offline.access`, limited scopes to `tweet.read`, `tweet.write`, `users.read`).

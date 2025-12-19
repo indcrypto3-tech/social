@@ -71,6 +71,7 @@ Contains all project documentation, including architecture diagrams, API specs, 
 ### Authentication
 *   Auth is handled by Supabase (Email/Password).
 *   **Social OAuth**: Managed by Backend (BFF pattern) via `backend/app/api/oauth`.
+*   **Connected Accounts**: Stored in `social_accounts`. Status (connected/expired) is computed at runtime. Disconnecting performs a soft-delete (`is_active = false`).
 *   Frontend manages the session.
 *   Frontend passes the Access Token in the `Authorization` header to the Backend.
 *   Backend verifies the token using Supabase Admin/Client.

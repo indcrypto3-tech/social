@@ -38,6 +38,7 @@ export const socialAccounts = pgTable('social_accounts', {
   platform: platformEnum('platform').notNull(),
   platformAccountId: varchar('platform_account_id').notNull(), // ID from the provider
   accountName: varchar('account_name'), // Handle or Page Name
+  accountType: varchar('account_type').default('profile'), // page | profile | org
   accessToken: text('access_token').notNull(), // Encrypted ideally
   refreshToken: text('refresh_token'),
   tokenExpiresAt: timestamp('token_expires_at'),

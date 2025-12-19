@@ -35,7 +35,12 @@ import {
 import { Sidebar } from "./sidebar";
 import { Fragment } from "react";
 
-export function Header() {
+interface HeaderProps {
+    onToggleSidebar?: () => void;
+    isSidebarOpen?: boolean;
+}
+
+export function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) {
     const pathname = usePathname();
 
     const { setTheme } = useTheme();
@@ -49,6 +54,7 @@ export function Header() {
 
     return (
         <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-50">
+            {/* Mobile Sheet Trigger */}
             <Sheet>
                 <SheetTrigger asChild>
                     <Button variant="ghost" size="icon" className="shrink-0 lg:hidden">
@@ -60,6 +66,34 @@ export function Header() {
                     <Sidebar />
                 </SheetContent>
             </Sheet>
+
+            {/* Desktop Sidebar Toggle (Only Visible when Sidebar is CLOSED) */}
+            {onToggleSidebar && !isSidebarOpen && (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 hidden lg:flex"
+                    onClick={onToggleSidebar}
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-5 w-5"
+                    >
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                        <path d="M9 3v18" />
+                        <path d="m14 9 2 3-2 3" />
+                    </svg>
+                    <span className="sr-only">Open Sidebar</span>
+                </Button>
+            )}
 
             {/* Breadcrumbs */}
             <div className="hidden md:flex items-center text-sm text-muted-foreground">

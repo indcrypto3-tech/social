@@ -30,3 +30,5 @@ All notable changes to the Autopostr project will be documented in this file.
 - **Stability**: Stabilized Calendar, Media, and Settings pages to prevent crashes on API failures.
 - **UX**: Improved Composer UX (character counter, button logic) and added global error handling with retry options.
 - **Navigation**: Added automatic redirect from landing page to dashboard for authenticated users.
+- **UI**: Added collapsable sidebar with persistent state preference.
+

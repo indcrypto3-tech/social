@@ -64,13 +64,13 @@ const sidebarNavItems = [
     },
 ];
 
-export function Sidebar({ className }: { className?: string }) {
+export function Sidebar({ className, onCollapse, showCollapseButton }: { className?: string, onCollapse?: () => void, showCollapseButton?: boolean }) {
     const pathname = usePathname();
     const { signOut } = useSession();
 
     return (
         <div className={cn("flex h-full flex-col border-r bg-card text-card-foreground", className)}>
-            <div className="flex h-16 items-center border-b px-6">
+            <div className="flex h-16 items-center justify-between border-b px-6">
                 <Link className="flex items-center gap-2 font-semibold" href="/">
                     <div className="relative h-8 w-8">
                         <Image src="/logo-icon-dark.svg" alt="Autopostr Logo" fill className="object-contain dark:hidden" />
@@ -80,6 +80,32 @@ export function Sidebar({ className }: { className?: string }) {
                         Autopostr
                     </span>
                 </Link>
+                {showCollapseButton && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hidden lg:flex"
+                        onClick={onCollapse}
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-4 w-4"
+                        >
+                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                            <path d="M9 3v18" />
+                            <path d="m14 9-2 3 2 3" />
+                        </svg>
+                        <span className="sr-only">Collapse Sidebar</span>
+                    </Button>
+                )}
             </div>
             <div className="flex-1 overflow-auto py-6 px-4">
                 <nav className="grid gap-1 text-sm font-medium">
@@ -108,16 +134,6 @@ export function Sidebar({ className }: { className?: string }) {
                 </nav>
             </div>
             <div className="mt-auto p-4 border-t space-y-2">
-                {/* Placeholder for Billing Status if needed */}
-                {/* <div className="rounded-lg border bg-muted/50 p-4">
-                     <div className="flex items-center gap-2 mb-2">
-                        <CreditCard className="h-4 w-4 text-primary" />
-                        <span className="text-xs font-semibold">Pro Plan</span>
-                     </div>
-                     <p className="text-xs text-muted-foreground mb-3">5/10 Accounts connected</p>
-                     <Button size="sm" variant="outline" className="w-full text-xs h-8">Upgrade</Button>
-                 </div> */}
-
                 <Button
                     variant="ghost"
                     className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"

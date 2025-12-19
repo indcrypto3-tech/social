@@ -1,25 +1,36 @@
-
 import { Queue } from 'bullmq';
 import * as dotenv from 'dotenv';
+import { Redis } from 'ioredis';
 
 dotenv.config();
 
-const CONNECTION = {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-};
+let notificationQueue: Queue | null = null;
 
-export const notificationQueue = new Queue('notifications-queue', {
-    connection: CONNECTION,
-    defaultJobOptions: {
-        attempts: 3,
-        backoff: {
-            type: 'exponential',
-            delay: 1000,
-        },
-        removeOnComplete: true,
+function getNotificationQueue() {
+    if (notificationQueue) return notificationQueue;
+
+    if (!process.env.REDIS_URL) {
+        throw new Error('REDIS_URL is not defined');
     }
-});
+
+    const connection = new Redis(process.env.REDIS_URL, {
+        maxRetriesPerRequest: null,
+    });
+
+    notificationQueue = new Queue('notifications-queue', {
+        connection,
+        defaultJobOptions: {
+            attempts: 3,
+            backoff: {
+                type: 'exponential',
+                delay: 1000,
+            },
+            removeOnComplete: true,
+        }
+    });
+
+    return notificationQueue;
+}
 
 type NotificationPayload = {
     userId: string;
@@ -28,5 +39,12 @@ type NotificationPayload = {
 };
 
 export async function triggerNotification({ userId, type, data }: NotificationPayload) {
-    await notificationQueue.add(type, { userId, type, data });
+    try {
+        const queue = getNotificationQueue();
+        await queue.add(type, { userId, type, data });
+    } catch (error) {
+        console.error('Failed to trigger notification:', error);
+        // Do not throw, to prevent crashing the calling flow
+    }
 }
+

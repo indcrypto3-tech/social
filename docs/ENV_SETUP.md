@@ -25,9 +25,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY="<your-local-timestamp-generated-anon-key>"
 # --- Redis (Background Worker) ---
 # Used by BullMQ for job queues.
 # If running Redis locally via Docker or native install.
-REDIS_HOST="localhost"
-REDIS_PORT="6379"
-# REDIS_PASSWORD="" # Optional, if you have set one
+# REDIS_PASSWORD="" # Optional, if using password-protected local redis
+
 
 # --- App URL ---
 # The base URL of your application. Used for absolute links/callbacks.
@@ -54,10 +53,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY="[your-production-anon-key]"
 
 # --- Redis (Background Worker) ---
 # You need a hosted Redis instance (e.g., Upstash, Railway, or managed Redis).
-REDIS_HOST="[your-redis-host]"
-REDIS_PORT="[your-redis-port-usually-6379-or-tls-port]"
-REDIS_PASSWORD="[your-redis-password]"
-# If using TLS (rediss://), ensure your worker connection logic supports it (usually just standard config).
+REDIS_URL="[your-redis-url]"
+# Format: redis://[user]:[password]@[host]:[port]
+# Example: redis://default:somepassword@eu2-redis.upstash.io:6379
+
 
 # --- App URL ---
 # Your production domain.
@@ -73,6 +72,6 @@ NEXT_PUBLIC_APP_URL="https://your-domain.com"
 | `DATABASE_URL` | The PostgreSQL connection string used by Drizzle ORM to perform migrations and queries. Isolate user/password credentials here. |
 | `NEXT_PUBLIC_SUPABASE_URL` | The REST API URL for your Supabase project. Exposed to the browser. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | The "Public" API key for Supabase. Safe to expose to the browser if RLS policies are set correctly. |
-| `REDIS_HOST` | Hostname/IP of your Redis server (required for scheduling queues). |
-| `REDIS_PORT` | Port for Redis (Default: 6379). |
+| `REDIS_URL` | Redis connection URL (e.g. redis://host:port). Required for queues. |
+
 | `REDIS_PASSWORD` | Password for Redis authentication (if enabled). |

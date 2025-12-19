@@ -1,5 +1,6 @@
 
 import { Worker, Job } from 'bullmq';
+import { Redis } from 'ioredis';
 import { db } from '../lib/db';
 import { notificationPreferences, notificationEvents, users } from '../lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -12,13 +13,18 @@ import { render } from '@react-email/components';
 
 dotenv.config();
 
-const CONNECTION = {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-};
+
 
 export function startNotificationWorker() {
     console.log('Starting Notification Worker...');
+
+    if (!process.env.REDIS_URL) {
+        throw new Error("REDIS_URL is not configured");
+    }
+
+    const connection = new Redis(process.env.REDIS_URL, {
+        maxRetriesPerRequest: null,
+    });
 
     // @ts-ignore
     const worker = new Worker('notifications-queue', async (job: Job) => {
@@ -114,7 +120,7 @@ export function startNotificationWorker() {
         }
 
     }, {
-        connection: CONNECTION,
+        connection,
         concurrency: 5
     });
 

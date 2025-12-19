@@ -1,5 +1,6 @@
 
 import { Worker, Queue } from 'bullmq';
+import { Redis } from 'ioredis';
 import { db } from '../lib/db';
 import { socialAccounts, analyticsSnapshots } from '../lib/db/schema';
 import { fetchInstagramAnalytics } from '../lib/analytics/instagram';
@@ -11,9 +12,13 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-const CONNECTION = {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
+const createConnection = () => {
+    if (!process.env.REDIS_URL) {
+        throw new Error("REDIS_URL not configured");
+    }
+    return new Redis(process.env.REDIS_URL, {
+        maxRetriesPerRequest: null,
+    });
 };
 
 export async function syncAnalytics() {
@@ -62,7 +67,7 @@ export async function syncAnalytics() {
 }
 
 // Ensure the queue exists and schedule the job
-const queue = new Queue('analytics-queue', { connection: CONNECTION });
+const queue = new Queue('analytics-queue', { connection: createConnection() });
 
 async function scheduleJob() {
     // Upsert the repeatable job
@@ -78,7 +83,7 @@ async function scheduleJob() {
 const worker = new Worker('analytics-queue', async (job) => {
     await syncAnalytics();
 }, {
-    connection: CONNECTION,
+    connection: createConnection(),
     concurrency: 1
 });
 

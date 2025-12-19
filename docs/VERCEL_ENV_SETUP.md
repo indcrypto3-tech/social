@@ -19,8 +19,6 @@ PORT=4000
 
 # Redis (if using Redis for queues)
 REDIS_URL=your-redis-url
-REDIS_HOST=your-redis-host
-REDIS_PORT=6379
 
 # Stripe (for billing)
 STRIPE_SECRET_KEY=sk_live_your-stripe-secret-key

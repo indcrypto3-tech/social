@@ -1,5 +1,6 @@
 
 import { Worker } from 'bullmq';
+import { Redis } from 'ioredis';
 import { db } from '../lib/db';
 import { sql } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
@@ -7,22 +8,24 @@ import http from 'http';
 
 dotenv.config();
 
-const CONNECTION = {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-};
+
 
 export async function checkHealth() {
     try {
         // 1. Check DB
         await db.execute(sql`SELECT 1`);
 
+
         // 2. Check Redis (via BullMQ or direct)
-        // We'll trust if we can connect a worker
+        const connection = new Redis(process.env.REDIS_URL!, {
+            maxRetriesPerRequest: null,
+        });
+
         const testWorker = new Worker('health-check', async () => { }, {
-            connection: CONNECTION
+            connection
         });
         await testWorker.close();
+        await connection.quit();
 
         return { status: 'healthy', timestamp: new Date().toISOString() };
     } catch (error: any) {

@@ -1,20 +1,25 @@
 import { Worker, Job } from 'bullmq';
+import { Redis } from 'ioredis';
 import { db } from '../lib/db';
 import { scheduledPosts, postDestinations, socialAccounts } from '../lib/db/schema';
 import { eq } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
 import { PostDispatcher } from '../lib/posting/dispatcher';
 import { startNotificationWorker } from './notifications';
-import { notificationQueue, triggerNotification } from '../lib/notifications/trigger';
+import { triggerNotification } from '../lib/notifications/trigger';
 import { users } from '../lib/db/schema';
 import { startHealthServer } from './health-check';
 
 dotenv.config();
 
-const CONNECTION = {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-};
+if (!process.env.REDIS_URL) {
+    console.error("REDIS_URL not configured");
+    process.exit(1);
+}
+
+const connection = new Redis(process.env.REDIS_URL, {
+    maxRetriesPerRequest: null
+});
 
 console.log('Starting Worker...');
 
@@ -119,7 +124,7 @@ const worker = new Worker('publish-queue', async (job: Job) => {
         throw error;
     }
 }, {
-    connection: CONNECTION,
+    connection,
     concurrency: 10,
     limiter: {
         max: 50,

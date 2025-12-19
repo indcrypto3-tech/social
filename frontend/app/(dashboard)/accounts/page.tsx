@@ -89,6 +89,7 @@ interface ConnectedAccount {
 export default function AccountsPage() {
     const [connectedAccounts, setConnectedAccounts] = React.useState<ConnectedAccount[]>([]);
     const [loading, setLoading] = React.useState(true);
+    const [isConnectDialogOpen, setIsConnectDialogOpen] = React.useState(false);
     const supabase = createClient();
     const { toast } = useToast();
 
@@ -189,7 +190,7 @@ export default function AccountsPage() {
                 <AccountStatusListener />
             </Suspense>
             <PageHeader heading="Connected Accounts" text="Manage your social media connections and permissions.">
-                <Dialog>
+                <Dialog open={isConnectDialogOpen} onOpenChange={setIsConnectDialogOpen}>
                     <DialogTrigger asChild>
                         <Button>
                             <Plus className="mr-2 h-4 w-4" />
@@ -233,7 +234,7 @@ export default function AccountsPage() {
                     <p className="text-muted-foreground max-w-sm mt-2 mb-6">
                         Connect your social media profiles to start scheduling posts.
                     </p>
-                    <Button onClick={() => document.querySelector<HTMLButtonElement>('[data-state="closed"]')?.click()}>
+                    <Button onClick={() => setIsConnectDialogOpen(true)}>
                         Connect Your First Account
                     </Button>
                 </Card>

@@ -10,8 +10,14 @@ import { SessionProvider } from "@/lib/auth/session-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Social Scheduler",
-  description: "AI-Powered Social Media Management",
+  title: "Autopostr – Social Media Scheduler",
+  description: "Streamline your social media presence with Autopostr's AI-powered scheduling and analytics.",
+  icons: {
+    icon: [
+      { url: "/logo-icon-dark.svg", media: "(prefers-color-scheme: light)" },
+      { url: "/logo-icon-light.svg", media: "(prefers-color-scheme: dark)" },
+    ],
+  },
 };
 
 export default function RootLayout({

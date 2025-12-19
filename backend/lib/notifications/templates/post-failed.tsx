@@ -42,7 +42,7 @@ export const PostFailedEmail = ({
                         View Post to Retry
                     </Link>
                     <Text style={footer}>
-                        Social Scheduler Notifier
+                        Autopostr Notifier
                     </Text>
                 </Container>
             </Body>

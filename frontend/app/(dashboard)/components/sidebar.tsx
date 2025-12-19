@@ -4,6 +4,7 @@
 import { logout } from "@/app/(auth)/actions";
 import { useSession } from "@/lib/auth/session-provider";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -71,11 +72,12 @@ export function Sidebar({ className }: { className?: string }) {
         <div className={cn("flex h-full flex-col border-r bg-card text-card-foreground", className)}>
             <div className="flex h-16 items-center border-b px-6">
                 <Link className="flex items-center gap-2 font-semibold" href="/">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                        <LayoutDashboard className="h-5 w-5" />
+                    <div className="relative h-8 w-8">
+                        <Image src="/logo-icon-dark.svg" alt="Autopostr Logo" fill className="object-contain dark:hidden" />
+                        <Image src="/logo-icon-light.svg" alt="Autopostr Logo" fill className="object-contain hidden dark:block" />
                     </div>
                     <span className="text-xl font-bold tracking-tight">
-                        Scheduler<span className="text-primary">AI</span>
+                        Autopostr
                     </span>
                 </Link>
             </div>

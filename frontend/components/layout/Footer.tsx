@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Twitter, Instagram, Linkedin, Github } from "lucide-react";
 
 export function Footer() {
@@ -8,10 +9,11 @@ export function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
                     <div className="space-y-4">
                         <Link href="/" className="text-xl font-bold tracking-tight flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
-                                <div className="w-4 h-4 rounded-full bg-primary" />
+                            <div className="relative w-8 h-8">
+                                <Image src="/logo-icon-dark.svg" alt="Autopostr Logo" fill className="object-contain dark:hidden" />
+                                <Image src="/logo-icon-light.svg" alt="Autopostr Logo" fill className="object-contain hidden dark:block" />
                             </div>
-                            SocialScheduler
+                            Autopostr
                         </Link>
                         <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
                             The ultimate social media scheduling tool for creators and agencies. Automate your growth today with AI-powered insights.
@@ -49,7 +51,7 @@ export function Footer() {
 
                 <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-border/40 gap-4">
                     <p className="text-sm text-muted-foreground">
-                        © {new Date().getFullYear()} SocialScheduler. All rights reserved.
+                        © {new Date().getFullYear()} Autopostr. All rights reserved.
                     </p>
                     <div className="flex items-center gap-4 text-muted-foreground">
                         <Link href="#" className="hover:text-foreground hover:bg-muted p-2 rounded-full transition-all"><Twitter size={18} /></Link>

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -24,11 +25,12 @@ export function Navbar({ inWaitlistMode }: NavbarProps) {
         )}>
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <Link href="/" className="text-xl font-bold tracking-tight flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
-                        <div className="w-4 h-4 rounded-full bg-primary shadow-glow" />
+                    <div className="relative w-8 h-8">
+                        <Image src="/logo-icon-dark.svg" alt="Autopostr Logo" fill className="object-contain dark:hidden" />
+                        <Image src="/logo-icon-light.svg" alt="Autopostr Logo" fill className="object-contain hidden dark:block" />
                     </div>
                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
-                        SocialScheduler
+                        Autopostr
                     </span>
                 </Link>
 

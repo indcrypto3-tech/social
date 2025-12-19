@@ -87,7 +87,7 @@ export function OnboardingChecklist() {
             </button>
 
             <CardHeader>
-                <CardTitle className="text-lg text-blue-900">Get Started with Social Scheduler</CardTitle>
+                <CardTitle className="text-lg text-blue-900">Get Started with Autopostr</CardTitle>
                 <CardDescription>Complete these steps to become a pro.</CardDescription>
                 <Progress value={progress} className="h-2 w-full mt-2" />
                 <p className="text-xs text-muted-foreground mt-1">{completedCount} of 5 completed</p>

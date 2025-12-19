@@ -61,7 +61,7 @@ export const WeeklyDigestEmail = ({
                         View Full Analytics
                     </Link>
                     <Text style={footer}>
-                        Social Scheduler Notifier
+                        Autopostr Notifier
                     </Text>
                 </Container>
             </Body>

@@ -132,7 +132,7 @@ export function Header() {
                             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full border border-border ml-1">
                                 <Avatar className="h-8 w-8">
                                     <AvatarImage src="/placeholder-user.jpg" alt="@user" />
-                                    <AvatarFallback className="bg-primary/10 text-primary text-xs">SC</AvatarFallback>
+                                    <AvatarFallback className="bg-primary/10 text-primary text-xs">AP</AvatarFallback>
                                 </Avatar>
                             </Button>
                         </DropdownMenuTrigger>

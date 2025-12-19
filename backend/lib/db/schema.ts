@@ -1,5 +1,5 @@
 
-import { pgTable, uuid, text, varchar, timestamp, jsonb, pgEnum, integer, uniqueIndex, boolean } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, varchar, timestamp, jsonb, pgEnum, integer, uniqueIndex, boolean, date } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // Enums
@@ -90,6 +90,10 @@ export const mediaLibrary = pgTable('media_library', {
   fileType: varchar('file_type').notNull(), // MIME type
   fileSize: integer('file_size'),
   fileName: varchar('file_name'),
+  bucket: text('bucket'),
+  storagePath: text('storage_path'),
+  mimeType: text('mime_type'),
+  status: text('status').default('ready'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -152,6 +156,95 @@ export const waitlist = pgTable('waitlist', {
   id: uuid('id').defaultRandom().primaryKey(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// Post Executions
+export const postExecutions = pgTable('post_executions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  postId: uuid('post_id').references(() => scheduledPosts.id, { onDelete: 'cascade' }).notNull(),
+  jobId: text('job_id'),
+  workerId: text('worker_id'),
+  status: text('status').notNull(),
+  startedAt: timestamp('started_at').defaultNow().notNull(),
+  finishedAt: timestamp('finished_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// Job History
+export const jobHistory = pgTable('job_history', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  jobId: text('job_id').notNull(),
+  jobType: text('job_type').notNull(),
+  status: text('status').notNull(),
+  durationMs: integer('duration_ms'),
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// Worker Failures
+export const workerFailures = pgTable('worker_failures', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  workerId: text('worker_id'),
+  jobId: text('job_id'),
+  error: text('error').notNull(),
+  stackTrace: text('stack_trace'),
+  occurredAt: timestamp('occurred_at').defaultNow().notNull(),
+});
+
+// Token Refresh Logs
+export const tokenRefreshLogs = pgTable('token_refresh_logs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  socialAccountId: uuid('social_account_id').references(() => socialAccounts.id, { onDelete: 'cascade' }).notNull(),
+  oldExpiresAt: timestamp('old_expires_at'),
+  newExpiresAt: timestamp('new_expires_at'),
+  status: text('status').notNull(),
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// Account Permissions
+export const accountPermissions = pgTable('account_permissions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  socialAccountId: uuid('social_account_id').references(() => socialAccounts.id, { onDelete: 'cascade' }).notNull(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  permissionLevel: text('permission_level').default('viewer').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => {
+  return {
+    uniquePermission: uniqueIndex('unique_account_permission').on(table.socialAccountId, table.userId)
+  }
+});
+
+// Post Approvals
+export const postApprovals = pgTable('post_approvals', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  postId: uuid('post_id').references(() => scheduledPosts.id, { onDelete: 'cascade' }).notNull(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  action: approvalStatusEnum('action').notNull(),
+  comment: text('comment'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// Post Analytics
+export const postAnalytics = pgTable('post_analytics', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  postId: uuid('post_id').references(() => scheduledPosts.id, { onDelete: 'cascade' }).notNull(),
+  platform: platformEnum('platform').notNull(),
+  metrics: jsonb('metrics').default({}).notNull(),
+  fetchedAt: timestamp('fetched_at').defaultNow().notNull(),
+});
+
+// Account Analytics
+export const accountAnalytics = pgTable('account_analytics', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  socialAccountId: uuid('social_account_id').references(() => socialAccounts.id, { onDelete: 'cascade' }).notNull(),
+  date: date('date').notNull(),
+  metrics: jsonb('metrics').default({}).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => {
+  return {
+    uniqueAccountDate: uniqueIndex('unique_account_analytics_date').on(table.socialAccountId, table.date)
+  }
 });
 
 
@@ -284,6 +377,56 @@ export const notificationEventsRelations = relations(notificationEvents, ({ one 
   user: one(users, {
     fields: [notificationEvents.userId],
     references: [users.id],
+  }),
+}));
+
+export const postExecutionsRelations = relations(postExecutions, ({ one }) => ({
+  post: one(scheduledPosts, {
+    fields: [postExecutions.postId],
+    references: [scheduledPosts.id],
+  }),
+}));
+
+export const tokenRefreshLogsRelations = relations(tokenRefreshLogs, ({ one }) => ({
+  socialAccount: one(socialAccounts, {
+    fields: [tokenRefreshLogs.socialAccountId],
+    references: [socialAccounts.id],
+  }),
+}));
+
+export const accountPermissionsRelations = relations(accountPermissions, ({ one }) => ({
+  socialAccount: one(socialAccounts, {
+    fields: [accountPermissions.socialAccountId],
+    references: [socialAccounts.id],
+  }),
+  user: one(users, {
+    fields: [accountPermissions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const postApprovalsRelations = relations(postApprovals, ({ one }) => ({
+  post: one(scheduledPosts, {
+    fields: [postApprovals.postId],
+    references: [scheduledPosts.id],
+  }),
+  user: one(users, {
+    fields: [postApprovals.userId],
+    references: [users.id],
+  }),
+}));
+
+export const postAnalyticsRelations = relations(postAnalytics, ({ one }) => ({
+  post: one(scheduledPosts, {
+    fields: [postAnalytics.postId],
+    references: [scheduledPosts.id],
+  }),
+}));
+
+export const accountAnalyticsRelations = relations(accountAnalytics, ({ one }) => ({
+  socialAccount: one(socialAccounts, {
+    fields: [accountAnalytics.socialAccountId],
+    references: [socialAccounts.id],
   }),
 }));
 

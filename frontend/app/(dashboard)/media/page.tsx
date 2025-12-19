@@ -9,12 +9,19 @@ export default async function MediaPage() {
 
     if (!session) redirect('/login');
 
-    const mediaItems = await apiClient<any[]>('/media', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        cache: 'no-store'
-    });
-
-    console.log('Media Page Fetched Items:', mediaItems?.length);
+    let mediaItems = [];
+    try {
+        mediaItems = await apiClient<any[]>('/media', {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            cache: 'no-store'
+        });
+        console.log('Media Page Fetched Items:', mediaItems?.length);
+    } catch (error) {
+        console.error("MEDIA_PAGE_CRASH", {
+            userId: session.user.id,
+            error
+        });
+    }
 
     return (
         <div className="flex flex-col gap-6">

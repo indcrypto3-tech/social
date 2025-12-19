@@ -75,3 +75,7 @@ Contains all project documentation, including architecture diagrams, API specs, 
 *   Frontend manages the session.
 *   Frontend passes the Access Token in the `Authorization` header to the Backend.
 *   Backend verifies the token using Supabase Admin/Client.
+
+## Error Handling
+*   **Global Error Boundary**: `frontend/app/(dashboard)/error.tsx` catches runtime errors in the dashboard layout and provides a user-friendly retry mechanism.
+*   **API Failures**: Pages (Calendar, Media, Settings) implement defensive programming (try/catch) to handle API downtime gracefully without crashing the UI.

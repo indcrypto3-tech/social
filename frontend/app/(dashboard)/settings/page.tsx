@@ -16,20 +16,38 @@ export default async function SettingsPage() {
         Authorization: `Bearer ${session.access_token}`
     }
 
-    try {
-        const [userProfile, preferences] = await Promise.all([
-            apiClient<any>('/settings', { headers }),
-            apiClient<any>('/settings/notifications', { headers })
-        ]);
+    let userProfile = null;
+    let preferences = null;
 
+    try {
+        userProfile = await apiClient<any>('/settings', { headers });
+    } catch (error) {
+        console.error("Failed to load user profile:", error);
+    }
+
+    try {
+        preferences = await apiClient<any>('/settings/notifications', { headers });
+    } catch (error) {
+        console.warn("Failed to load preferences:", error);
+        // Fallback to defaults or null
+        preferences = {};
+    }
+
+    if (!userProfile) {
         return (
             <div className="flex flex-col gap-6 max-w-5xl mx-auto p-6 md:p-10 pb-16">
-                <PageHeader heading="Settings" text="Manage your account, preferences, and subscription." />
-                <SettingsClient user={userProfile} preferences={preferences} />
+                <div className="p-4 border border-red-200 bg-red-50 text-red-900 rounded-md">
+                    Failed to load settings. Please try again later.
+                </div>
             </div>
-        )
-    } catch (error) {
-        console.error("Failed to load settings:", error);
-        return <div>Failed to load settings. Please try again later.</div>
+        );
     }
+
+    return (
+        <div className="flex flex-col gap-6 max-w-5xl mx-auto p-6 md:p-10 pb-16">
+            <PageHeader heading="Settings" text="Manage your account, preferences, and subscription." />
+            <SettingsClient user={userProfile} preferences={preferences} />
+        </div>
+    )
 }
+

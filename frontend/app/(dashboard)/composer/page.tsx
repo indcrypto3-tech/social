@@ -198,6 +198,12 @@ export default function ComposerPage() {
                                 onChange={(e) => setContent(e.target.value)}
                             />
 
+                            <div className="flex justify-between items-center px-4 pb-2">
+                                <span className={cn("text-xs", content.length > 280 ? "text-red-500 font-bold" : "text-muted-foreground")}>
+                                    {content.length} characters
+                                </span>
+                            </div>
+
                             <div className="p-4 border-t bg-muted/5">
                                 <div className="border border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 hover:border-primary/50 transition-all cursor-pointer group">
                                     <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
@@ -245,15 +251,22 @@ export default function ComposerPage() {
                                     </Select>
                                 </div>
                             </div>
-                            <Button
-                                onClick={() => accounts.length === 0 ? (window.location.href = '/accounts') : handleSubmit()}
-                                disabled={isSubmitting}
-                                size="lg"
-                                className="px-8 shadow-md"
-                            >
-                                <Send className="mr-2 h-4 w-4" />
-                                {accounts.length === 0 ? 'Connect Accounts' : (isSubmitting ? 'Scheduling...' : 'Schedule Post')}
-                            </Button>
+                            <div className="flex flex-col items-end gap-1">
+                                <Button
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting || accounts.length === 0}
+                                    size="lg"
+                                    className="px-8 shadow-md"
+                                >
+                                    <Send className="mr-2 h-4 w-4" />
+                                    {isSubmitting ? 'Scheduling...' : 'Schedule Post'}
+                                </Button>
+                                {accounts.length === 0 && (
+                                    <span className="text-[10px] text-red-500">
+                                        Connect an account to post
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </Card>
                 </div>

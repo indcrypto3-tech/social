@@ -27,3 +27,6 @@ All notable changes to the Autopostr project will be documented in this file.
 ### Fixed
 - **Dashboard**: Fixed widget loading issues caused by undefined API URLs.
 - **Auth Flow**: Resolved issues with Twitter OAuth callback loop and token persistence.
+- **Stability**: Stabilized Calendar, Media, and Settings pages to prevent crashes on API failures.
+- **UX**: Improved Composer UX (character counter, button logic) and added global error handling with retry options.
+- **Navigation**: Added automatic redirect from landing page to dashboard for authenticated users.

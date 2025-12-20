@@ -68,8 +68,14 @@ Contains all project documentation, including architecture diagrams, API specs, 
 *   **Background Jobs**: Define in `backend/worker/`.
 
 ### Development Workflow
-1.  **Frontend**: Calls `frontend/lib/api/client.ts` -> Calls `/api/...` -> Next.js Rewrite proxies to `BACKEND_INTERNAL_URL` (Port 4000).
-2.  **Backend**: Receives request -> Authenticates -> Calls DB/Queue -> Returns JSON.
+1.  **Frontend**: Calls `frontend/lib/api/client.ts` -> Calls `${NEXT_PUBLIC_BACKEND_URL}/api/...` (Direct Cross-Domain Request).
+2.  **Backend**: Hosted purely as an API Service (Port 4000).
+    *   Configured with CORS to allow `FRONTEND_URL`.
+    *   Sets Secure/SameSite=None cookies for cross-domain sessions.
+3.  **Authentication**:
+    *   **Browser**: `apiClient` automatically injects Supabase Token (`Authorization: Bearer ...`) for authentication.
+    *   **Server Actions**: Manually pass `Authorization` header or Session Cookies.
+    *   **Backend**: Validates Token OR Session Cookie (Hybrid Auth).
 
 ### Database Access
 *   **Frontend**: NEVER access the DB directly.

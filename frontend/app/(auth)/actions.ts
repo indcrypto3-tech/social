@@ -12,7 +12,15 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
 // Helper to get Backend URL
-const BACKEND_URL = process.env.BACKEND_INTERNAL_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+// MUST be defined in .env
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+if (!BACKEND_URL) {
+    // We can't throw at module level in Next.js easily without breaking build sometimes, 
+    // but essential for runtime.
+    console.error("CRITICAL: NEXT_PUBLIC_BACKEND_URL is missing");
+}
+
 const SESSION_COOKIE_NAME = 'session_id';
 
 export async function login(formData: FormData) {

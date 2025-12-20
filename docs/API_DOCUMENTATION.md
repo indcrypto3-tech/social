@@ -5,8 +5,8 @@ All endpoints are available under the base URL.
 
 **Authentication**:
 All protected routes require a valid session.
-1. **Session Cookie**: Primary method (Frontend -> Proxy -> Backend).
-2. **Bearer Token**: Fallback for Server Actions or external calls.
+1. **Session Cookie**: Primary method for Postman/Direct API usage (Requires `SameSite=None; Secure`).
+2. **Bearer Token**: Primary method for Cross-Domain Frontend calls.
    `Authorization: Bearer <SUPABASE_ACCESS_TOKEN>`
 
 ---

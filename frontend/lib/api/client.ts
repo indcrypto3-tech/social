@@ -33,15 +33,17 @@ export const apiClient = async <T>(
     // Normalize endpoint to ensure it points to /api/*
     const cleanEndpoint = endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
 
-    // SSR Base URL logic:
-    // 1. Browser: window.location.origin
-    // 2. Server: NEXT_PUBLIC_APP_URL (e.g., https://app.autopostr.com)
-    // 3. Fallback: http://localhost:3000
-    const baseUrl = typeof window !== 'undefined'
-        ? window.location.origin
-        : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+    // Environment config
+    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (!BACKEND_URL) {
+        throw new Error("Configuration Error: NEXT_PUBLIC_BACKEND_URL is missing.");
+    }
 
-    const url = new URL(`${API_BASE_URL}/${cleanEndpoint}`, baseUrl);
+    // Ensure we don't double-slash
+    const baseUrl = BACKEND_URL.replace(/\/$/, "");
+
+    // Construct absolute URL -> https://backend.com/api/endpoint
+    const url = new URL(`${baseUrl}/api/${cleanEndpoint}`);
 
     if (params) {
         Object.entries(params).forEach(([key, value]) => {
@@ -52,8 +54,33 @@ export const apiClient = async <T>(
     }
 
     try {
+        // Validation: Auto-inject Auth Token for Client-Side calls
+        if (typeof window !== 'undefined') {
+            // Check if Authorization header is already set
+            const hasAuth = options.headers && (
+                'Authorization' in options.headers || 'authorization' in options.headers
+            );
+
+            if (!hasAuth) {
+                // Dynamically import to avoid server-side bundle issues
+                const { createClient } = await import('@/lib/supabase/client');
+                const supabase = createClient();
+                const { data } = await supabase.auth.getSession();
+
+                if (data.session?.access_token) {
+                    options = {
+                        ...options,
+                        headers: {
+                            ...options.headers,
+                            'Authorization': `Bearer ${data.session.access_token}`
+                        }
+                    };
+                }
+            }
+        }
+
         const response = await fetch(url.toString(), {
-            credentials: "include", // Ensure session cookies are sent
+            credentials: "include", // Ensure session cookies are sent (if exist)
             headers: {
                 "Content-Type": "application/json",
                 ...options.headers,

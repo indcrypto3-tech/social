@@ -32,8 +32,8 @@ export async function createSession(userId: string, metadata: { userAgent?: stri
     // Set Cookie
     cookies().set(SESSION_COOKIE_NAME, session.id, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: true, // Always secure for cross-site
+        sameSite: 'none', // Required for cross-site
         maxAge: SESSION_TTL_SECONDS,
         path: '/',
     });
@@ -92,8 +92,8 @@ export async function refreshSession() {
     if (updated) {
         cookies().set(SESSION_COOKIE_NAME, updated.id, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            secure: true,
+            sameSite: 'none',
             maxAge: SESSION_TTL_SECONDS,
             path: '/',
         });

@@ -4,8 +4,10 @@ This document outlines the available API endpoints for the Social Media Schedule
 All endpoints are available under the base URL.
 
 **Authentication**:
-All protected routes require a Bearer Token in the `Authorization` header.
-`Authorization: Bearer <SUPABASE_ACCESS_TOKEN>`
+All protected routes require a valid session.
+1. **Session Cookie**: Primary method (Frontend -> Proxy -> Backend).
+2. **Bearer Token**: Fallback for Server Actions or external calls.
+   `Authorization: Bearer <SUPABASE_ACCESS_TOKEN>`
 
 ---
 

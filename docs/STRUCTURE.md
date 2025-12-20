@@ -81,9 +81,8 @@ Contains all project documentation, including architecture diagrams, API specs, 
     *   Frontend redirects to `backend/app/api/oauth/[provider]/start`.
     *   Backend handles handshake and redirects back to Frontend.
 *   **Connected Accounts**: Stored in `social_accounts`. Status (connected/expired) is computed at runtime. Disconnecting performs a soft-delete (`is_active = false`).
-*   Frontend manages the session.
-*   Frontend passes the Access Token in the `Authorization` header to the Backend.
-*   Backend verifies the token using Supabase Admin/Client.
+*   **Frontend**: `middleware.ts` enforces Auth Guards (Redirects unauthenticated users to `/login`).
+*   **Backend**: Verifies authentication via Session Cookie (Primary) or Bearer Token (Fallback for Server Actions).
 
 ## Error Handling
 *   **Global Error Boundary**: `frontend/app/(dashboard)/error.tsx` catches runtime errors in the dashboard layout and provides a user-friendly retry mechanism.

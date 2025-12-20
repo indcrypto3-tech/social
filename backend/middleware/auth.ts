@@ -15,9 +15,29 @@ export async function getUser(request: Request) {
         };
     }
 
-    // 2. Fallback to Supabase Token? (Optional, if we want to support transition)
-    // The prompt implies "all session logic must be backend-controlled".
-    // "Implement robust, secure session management... Validate session on every protected request".
-    // I will enforce Session.
+    // 2. Fallback to Supabase Token (Bearer)
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        if (token) {
+            try {
+                // We use a direct supabase-js client here to verify the token without cookie dependency
+                const { createClient } = await import('@supabase/supabase-js');
+                const supabase = createClient(
+                    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+                );
+
+                const { data: { user }, error } = await supabase.auth.getUser(token);
+
+                if (user && !error) {
+                    return { id: user.id };
+                }
+            } catch (error) {
+                console.warn('Token verification failed:', error);
+            }
+        }
+    }
+
     return null;
 }

@@ -1,4 +1,5 @@
-ALTER TABLE "social_accounts" ADD COLUMN "is_active" boolean DEFAULT true NOT NULL;
+ALTER TABLE "social_accounts" ADD COLUMN IF NOT EXISTS "account_type" varchar DEFAULT 'profile';
+ALTER TABLE "social_accounts" ADD COLUMN IF NOT EXISTS "is_active" boolean DEFAULT true NOT NULL;
 
 CREATE TABLE IF NOT EXISTS "sessions" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),

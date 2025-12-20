@@ -33,7 +33,7 @@ export class OAuthStateManager {
         cookies().set(cookieName, JSON.stringify(data), {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' required for cross-site cookie usage in Prod
             maxAge: COOKIE_MAX_AGE,
             path: '/',
         });

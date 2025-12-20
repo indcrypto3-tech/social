@@ -23,7 +23,7 @@ export class TwitterProvider implements OAuthProvider {
             response_type: 'code',
             client_id: this.clientId,
             redirect_uri: this.redirectUri,
-            scope: 'tweet.read tweet.write users.read offline.access',
+            scope: 'tweet.read tweet.write users.read',
             state: state,
             code_challenge: verifier, // PKCE Challenge passed here (we actually need the challenge calculated from verifier elsewhere, but let's clarify interface)
             code_challenge_method: 'S256',

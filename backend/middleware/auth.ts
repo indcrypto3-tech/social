@@ -23,10 +23,15 @@ export async function getUser(request: Request) {
             try {
                 // We use a direct supabase-js client here to verify the token without cookie dependency
                 const { createClient } = await import('@supabase/supabase-js');
-                const supabase = createClient(
-                    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-                );
+                const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+                const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+                if (!supabaseUrl || !supabaseKey) {
+                    console.error('Supabase URL/Key missing in auth middleware');
+                    return null;
+                }
+
+                const supabase = createClient(supabaseUrl, supabaseKey);
 
                 const { data: { user }, error } = await supabase.auth.getUser(token);
 

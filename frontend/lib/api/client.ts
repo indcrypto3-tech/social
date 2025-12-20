@@ -32,7 +32,16 @@ export const apiClient = async <T>(
 ): Promise<T> => {
     // Normalize endpoint to ensure it points to /api/*
     const cleanEndpoint = endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
-    const url = new URL(`${API_BASE_URL}/${cleanEndpoint}`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+
+    // SSR Base URL logic:
+    // 1. Browser: window.location.origin
+    // 2. Server: NEXT_PUBLIC_APP_URL (e.g., https://app.autopostr.com)
+    // 3. Fallback: http://localhost:3000
+    const baseUrl = typeof window !== 'undefined'
+        ? window.location.origin
+        : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+
+    const url = new URL(`${API_BASE_URL}/${cleanEndpoint}`, baseUrl);
 
     if (params) {
         Object.entries(params).forEach(([key, value]) => {

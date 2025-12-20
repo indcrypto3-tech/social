@@ -1,7 +1,7 @@
 # Backend API Documentation
 
 This document outlines the available API endpoints for the Social Media Scheduler backend.
-All endpoints are available under the base URL (e.g., `http://localhost:4000/api`).
+All endpoints are available under the base URL.
 
 **Authentication**:
 All protected routes require a Bearer Token in the `Authorization` header.

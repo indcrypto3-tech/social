@@ -10,7 +10,8 @@ export class TwitterProvider implements OAuthProvider {
     constructor() {
         this.clientId = process.env.X_CLIENT_ID!;
         this.clientSecret = process.env.X_CLIENT_SECRET!;
-        this.redirectUri = process.env.X_CALLBACK_URL || 'http://localhost:4000/api/oauth/twitter/callback';
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        this.redirectUri = process.env.X_CALLBACK_URL || `${baseUrl}/api/oauth/twitter/callback`;
 
         if (!this.clientId || !this.clientSecret) {
             throw new Error('Missing Twitter (X) credentials');

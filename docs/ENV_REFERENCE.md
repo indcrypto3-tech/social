@@ -16,6 +16,7 @@ Complete list of all environment variables used in Autopostr backend.
 | `PORT` | 📝 | `4000` | Server port |
 | `NODE_ENV` | 📝 | `development` | Environment mode |
 | `NEXT_PUBLIC_APP_URL` | ✅ | - | Public application URL |
+| `BACKEND_INTERNAL_URL` | 📝 | - | Internal URL for backend (Docker/Railway) |
 
 ---
 

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Check, Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
+import { apiClient } from '@/lib/api/client'
 
 const PLANS = [
     {
@@ -40,19 +41,18 @@ export function BillingContent({ plan, status, date }: { plan: string, status: s
     async function handleCheckout(priceId: string) {
         setLoading(priceId)
         try {
-            const res = await fetch('/api/billing/checkout', {
+            const data = await apiClient<{ url: string }>('/billing/checkout', {
                 method: 'POST',
                 body: JSON.stringify({ priceId }),
-                headers: { 'Content-Type': 'application/json' }
             })
-            const data = await res.json()
+
             if (data.url) {
                 window.location.href = data.url
             } else {
                 throw new Error('Failed to create checkout session')
             }
         } catch (error) {
-            toast({ title: "Error", description: "Something went wrong.", variant: "destructive" })
+            // apiClient handles toast
             setLoading(null)
         }
     }
@@ -60,15 +60,15 @@ export function BillingContent({ plan, status, date }: { plan: string, status: s
     async function handlePortal() {
         setLoading('portal')
         try {
-            const res = await fetch('/api/billing/portal', {
+            const data = await apiClient<{ url: string }>('/billing/portal', {
                 method: 'POST'
             })
-            const data = await res.json()
+
             if (data.url) {
                 window.location.href = data.url
             }
         } catch (error) {
-            toast({ title: "Error", description: "Something went wrong.", variant: "destructive" })
+            // apiClient handles toast
             setLoading(null)
         }
     }

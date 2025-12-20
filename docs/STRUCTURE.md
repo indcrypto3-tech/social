@@ -68,7 +68,7 @@ Contains all project documentation, including architecture diagrams, API specs, 
 *   **Background Jobs**: Define in `backend/worker/`.
 
 ### Development Workflow
-1.  **Frontend**: Calls `frontend/lib/api/client.ts` -> functions call `NEXT_PUBLIC_API_BASE_URL` (Backend).
+1.  **Frontend**: Calls `frontend/lib/api/client.ts` -> Calls `/api/...` -> Next.js Rewrite proxies to `BACKEND_INTERNAL_URL` (Port 4000).
 2.  **Backend**: Receives request -> Authenticates -> Calls DB/Queue -> Returns JSON.
 
 ### Database Access

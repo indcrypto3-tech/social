@@ -1,16 +1,4 @@
-
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase Admin client for Storage operations (server-side only)
-// using Service Role Key to bypass RLS for uploads if needed, or ensuring correct RLS policies.
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-    console.warn("Supabase credentials missing for Storage");
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+import { getSupabaseAdmin } from '../supabase/admin';
 
 export const BUCKET_NAME = 'media';
 
@@ -19,6 +7,7 @@ export async function uploadFile(
     fileBody: Buffer | ArrayBuffer,
     contentType: string
 ): Promise<string> {
+    const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
         .storage
         .from(BUCKET_NAME)
@@ -41,6 +30,7 @@ export async function uploadFile(
 }
 
 export async function deleteFile(fileName: string) {
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase
         .storage
         .from(BUCKET_NAME)

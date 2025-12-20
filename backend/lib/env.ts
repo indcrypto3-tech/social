@@ -103,8 +103,8 @@ export function validateEnv(): EnvConfig {
 
     // Validate URLs
     const urlVars = [
-        'NEXT_PUBLIC_SUPABASE_URL',
         'SUPABASE_URL',
+        'NEXT_PUBLIC_SUPABASE_URL',
         'NEXT_PUBLIC_APP_URL',
         'REDIS_URL'
     ];
